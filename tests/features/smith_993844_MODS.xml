@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mods xmlns="http://www.loc.gov/mods/v3"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      xmlns:mods="http://www.loc.gov/mods/v3"
+      xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
+
+<!-- Title -->
+<titleInfo>
+  <title>Strachey to Woolf</title>
+</titleInfo>
+
+<!-- Date -->
+<originInfo>
+  <dateCreated keyDate="yes">1917 Dec 21</dateCreated>
+  <dateValid encoding="iso8601" point="start">1917-12-21</dateValid>
+  <dateValid encoding="iso8601" point="end">1917-12-21</dateValid>
+</originInfo>
+
+<!-- Repository name -->
+<name>
+  <namePart>Mortimer Rare Book Collection (MRBC)</namePart>
+  <role><roleTerm authority="local" type="text">Unit</roleTerm></role>
+</name>
+
+<!-- Extent -->
+
+<!-- Genres -->
+
+<!-- Subjects -->
+<subject authority="lcsh" valueURI="http://id.loc.gov/authorities/subjects/sh2002005435">
+        <topic>Women authors</topic>
+</subject>
+<subject authority="homosaurus" valueURI="significantOthers">
+        <topic>Significant others</topic>
+</subject>
+<subject authority="lcsh">
+        <topic>Women novelists, English</topic>
+</subject>
+
+<!-- Subjects from agents -->
+
+<!-- Agents as donors or creators -->
+  <name type="personal" authority="naf">
+  <role>
+    <roleTerm type="text" authority="marcrelator">creator</roleTerm>
+    <roleTerm type="code" authority="marcrelator">cre</roleTerm>
+  </role>
+    <namePart>Bell, Quentin.</namePart>
+  </name>
+<name type="corporate" authority="lcsh">
+  <role>
+    <roleTerm type="text" authority="marcrelator">donor</roleTerm>
+    <roleTerm type="code" authority="marcrelator">dnr</roleTerm>
+  </role>
+    <namePart>Hogarth Press.</namePart>
+  </name>
+
+<!-- Arrangement -->
+
+<!-- Language of materials  -->
+<language>
+  <languageTerm>eng</languageTerm>
+</language>
+
+<!-- Scope and content --><abstract>The Virginia Woolf Papers consist of 2.25 linear feet of material, dating from 1902 to 1956. Types of materials include correspondence, reading notes, drafts of essays and short stories, corrected page proofs of novels and collected essays, printed ephemera, and photographs. The bulk of the collection was assembled by Frances Hooper (1892-1986) and bequeathed to Smith College in 1986. A few additional manuscripts have been added through purchase and gift. The papers are arranged in six series.</abstract>
+
+<!-- Conditions governing use --><accessCondition type="use and reproduction" displayLabel="Collection Use and Reproduction"> Materials in this collection may be governed by copyright. For reproductions of materials that are governed by fair use as defined under U. S. Copyright Law, no permission to cite or publish is required. Researchers are responsible for determining who may hold materials&#x27; copyrights and obtaining approval from them. Researchers do not need anything further from Smith College Special Collections to move forward with their use.</accessCondition>
+
+<accessCondition type="restriction on access" displayLabel="Collection Access"> Until we move into New Neilson in early 2021, collections are stored in multiple locations and may take up to 48 hours to retrieve. Researchers are strongly encouraged to contact Special Collections (specialcollections@smith.edu) at least a week in advance of any planned visits so that boxes may be retrieved for them in a timely manner.</accessCondition>
+
+<!-- Shelf location -->
+<location>
+  <shelfLocator> Box 1: [310183630231859], Folder 71
+  </shelfLocator>
+</location>
+
+<!-- Digital object ID -->
+<identifier type="local">smith_mrbc_ms00001_as38141_00</identifier>
+
+<!-- Digital object URI -->
+<identifier type="asdouri">/repositories/2/digital_objects/1</identifier>
+
+<!-- Archival object ID -->
+<identifier type="asrefid">7cfc8140e5b66b9f8cdc423fe2c1cd44</identifier>
+
+<!-- Archival object URI -->
+<identifier type="asouri">/repositories/2/archival_objects/1</identifier>
+
+<!-- Resource title -->
+<relatedItem type="host" displayLabel="Collection">
+  <titleInfo>
+    <title>Virginia Woolf papers</title>
+  </titleInfo>
+  <identifier>MS 00001</identifier>
+</relatedItem>
+
+<!-- Finding aid -->
+<relatedItem type="host" displayLabel="Collection">
+  <identifier type="uri" displayLabel="Finding aid"></identifier>
+</relatedItem>
+
+<!-- Parent institution -->
+<location>
+  <physicalLocation>Smith College Special Collections</physicalLocation>
+</location>
+
+<!-- Preferred Citation -->
+<note type="preferred citation" displayLabel="Preferred Citation">Strachey to Woolf, Mortimer Rare Book Collection (MRBC), MS 00001, Smith College Special Collections, Northampton, Massachusetts.</note>
+
+</mods>

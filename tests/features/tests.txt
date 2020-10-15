@@ -1,0 +1,14 @@
+Feature: creating test records in a blank instance of ArchivesSpace
+
+        Scenario: create test records to test if data is exporting corr$
+                Given I create a sample record
+                When I export it
+                Then I should see specific values in specific fields
+			| value 		| field1 	| field2	 | field3 	| afield1 	| avalue1	| afield2 	| avalue2 	| afield3 	| avalue3 	|
+			| Strachey to Woolf	| titleInfo    	| title	 	 | None		| None		| None		| None		| None		| None		| None		|
+			| 1917 Dec 21		| originInfo	| dateCreated 	 | None		| None		| None		| keyDate	| yes		| None		| None		|
+			| 1917-12-21		| originInfo	| dateValid	 | None		| None		| None		| encoding	| iso8601	| point		| start		|
+			| 1917-12-21		| originInfo	| dateValid	 | None		| None		| None		| encoding	| iso8601	| point		| end		|
+
+
+
