@@ -3,18 +3,7 @@ from pprint import pprint as pp
 import logging
 
 
-def get_digital_objects(repo):
-	r = aspace.repositories(repo)
-	dos = r.digital_objects()
-	digital_objects = []
-	for do in dos:
-		for file_version in do.json()['file_versions']:
-			if 'compass' in file_version['file_uri']:
-				if not do.json() in digital_objects:
-					digital_objects.append(do.json())
-
-	return digital_objects
-	
+aspace = ASpace()
 
 def chunk_ids(id_list):
 	ids = []
@@ -49,12 +38,23 @@ def group_uris(uri_list):
 	return all_uris
 
 
-if __name__ == "__main__":
+def group_agents(uri_list):
+	all_uris = {}
+	all_uris['corporate'] = []
+	all_uris['people'] = []
+	all_uris['families'] = []
+	for uri in uri_list:
+		if 'corporate' in uri:
+			all_uris['corporate'].append(uri.split('/')[-1])
+		elif 'people' in uri:
+			all_uris['people'].append(uri.split('/')[-1])
+		elif 'families' in uri:
+			all_uris['families'].append(uri.split('/')[-1])
 
-	logging.basicConfig(level=logging.INFO)
-	aspace = ASpace()
+	return all_uris
 
-	resource_uris = []
+
+def get_data_dict():
 	extracted_data = {}
 	extracted_data['digital_objects'] = []
 	extracted_data['archival_objects'] = []
@@ -63,14 +63,32 @@ if __name__ == "__main__":
 	extracted_data['subjects'] = []
 	extracted_data['agents'] = []
 
-	# Get digital objects
-	repos = [2, 3, 4]
-	for repo in repos:	
-		extracted_data['digital_objects'].extend(get_digital_objects(repo))
+	return extracted_data
 
-	# Get parent objects (mostly archival objects, a couple accessions and resources)
+
+def get_digital_objects(repo):
+	r = aspace.repositories(repo)
+	dos = r.digital_objects()
+	digital_objects = []
+	for do in dos:
+		for file_version in do.json()['file_versions']:
+			if 'compass' in file_version['file_uri']:
+				if not do.json() in digital_objects:
+					digital_objects.append(do.json())
+
+	return digital_objects
+
+
+def get_digital_objects_by_repo(list_of_repos, data_dict):
+	for repo in list_of_repos:	
+		data_dict['digital_objects'].extend(get_digital_objects(repo))
+
+	return data_dict
+
+
+def get_parent_objects(data_dict):
 	all_ao_uris = []
-	for do in extracted_data['digital_objects']:
+	for do in data_dict['digital_objects']:
 		for instance in do['linked_instances']:
 			if 'archival_objects' in instance['ref']:
 				if not instance['ref'] in all_ao_uris:
@@ -78,21 +96,23 @@ if __name__ == "__main__":
 				else:
 					record = aspace.client.get(instance['ref'])
 					if 'resources' in instance['ref']:
-						extracted_data['resources'].append(record.json())
+						data_dict['resources'].append(record.json())
 					elif 'accessions' in instance['ref']:
-						extracted_data['accessions'].append(record.json())
+						data_dict['accessions'].append(record.json())
 
 	aos_grouped_by_repo = group_uris(all_ao_uris)
 	for k, v in aos_grouped_by_repo.items():
 		chunks = chunk_ids(v)
 		for chunk in chunks:
 			archival_objects = aspace.client.get(f'/repositories/{k}/archival_objects?id_set={chunk}')
-			extracted_data['archival_objects'].extend(archival_objects.json())
+			data_dict['archival_objects'].extend(archival_objects.json())
 
-	
-	# Get resources
+	return data_dict
+
+
+def get_resources(data_dict):
 	resource_uris = []
-	for ao in extracted_data['archival_objects']:
+	for ao in data_dict['archival_objects']:
 		try:
 			if not ao['resource']['ref'] in resource_uris:
 				resource_uris.append(ao['resource']['ref'])
@@ -104,7 +124,56 @@ if __name__ == "__main__":
 		chunks = chunk_ids(v)
 		for chunk in chunks:
 			resources = aspace.client.get(f'/repositories/{k}/resources?id_set={chunk}')
-			extracted_data['resources'].extend(resources.json())
+			data_dict['resources'].extend(resources.json())
+
+	return data_dict
+
+
+def get_agents(data_dict):
+	agent_uris = []
+	for ao in data_dict['archival_objects']:
+		if len(ao['linked_agents']) > 0:
+			for agent in ao['linked_agents']:
+				if not agent['ref'] in agent_uris:
+					agent_uris.append(agent['ref'])
+
+	for r in data_dict['resources']:
+		if len(r['linked_agents']) > 0:
+			for agent in r['linked_agents']:
+				if not agent['role'] == 'subject':
+					if not agent['ref'] in agent_uris:
+						agent_uris.append(agent['ref'])
+
+	agents_grouped_by_type = group_agents(agent_uris)
+	for k, v in agents_grouped_by_type.items():
+		chunks = chunk_ids(v)
+		for chunk in chunks:
+			agents = aspace.client.get(f'/agents/{k}?id_set={chunk}')
+			data_dict['agents'].extend(agents.json())
+
+	return data_dict
+
+
+def get_subjects(data_dict):
+	subject_uris = []
+	for ao in data_dict['archival_objects']:
+		if len(ao['subjects']) > 0:
+			for subject in ao['subjects']:
+				if not subject['ref'] in subject_uris:
+					subject_uris.append(subject['ref'].split('/')[-1])
+
+	chunks = chunk_ids(subject_uris)
+	for chunk in chunks:
+		subjects = aspace.client.get(f'/subjects?id_set={chunk}')
+		data_dict['subjects'].extend(subjects.json())
+
+	return data_dict
+
+
+def get_extract(list_of_repos):
+	data_dict = get_data_dict()
+	return get_subjects(get_agents(get_resources(get_parent_objects(get_digital_objects_by_repo(list_of_repos, data_dict)))))
+
 
 
 
