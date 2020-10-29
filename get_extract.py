@@ -45,7 +45,7 @@ def group_agents(uri_list):
 	all_uris['families'] = []
 	for uri in uri_list:
 		if 'corporate' in uri:
-			all_uris['corporate'].append(uri.split('/')[-1])
+			all_uris['corporate_entities'].append(uri.split('/')[-1])
 		elif 'people' in uri:
 			all_uris['people'].append(uri.split('/')[-1])
 		elif 'families' in uri:
