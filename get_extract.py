@@ -40,7 +40,7 @@ def group_uris(uri_list):
 
 def group_agents(uri_list):
 	all_uris = {}
-	all_uris['corporate'] = []
+	all_uris['corporate_entities'] = []
 	all_uris['people'] = []
 	all_uris['families'] = []
 	for uri in uri_list:
@@ -62,6 +62,7 @@ def get_data_dict():
 	extracted_data['resources'] = []	
 	extracted_data['subjects'] = []
 	extracted_data['agents'] = []
+	extracted_data['top_containers'] = []
 
 	return extracted_data
 
@@ -170,9 +171,30 @@ def get_subjects(data_dict):
 	return data_dict
 
 
+def get_top_containers(data_dict):
+	top_container_uris = []
+	for ao in data_dict['archival_objects']:
+		if len(ao['instances']) > 0:
+			for i in ao['instances']:
+				try:
+					if not i['sub_container']['top_container']['ref'] in top_container_uris:
+						top_container_uris.append(i['sub_container']['top_container']['ref'])
+				except KeyError:
+					pass
+	grouped_by_repo = group_uris(top_container_uris)
+	for k, v in grouped_by_repo.items():
+		chunks = chunk_ids(v)
+		for chunk in chunks:
+			tcs = aspace.client.get(f'/repositories/{k}/top_containers?id_set={chunk}')
+			data_dict['top_containers'].extend(tcs.json())
+
+	return data_dict
+
+
+
 def get_extract(list_of_repos):
 	data_dict = get_data_dict()
-	return get_subjects(get_agents(get_resources(get_parent_objects(get_digital_objects_by_repo(list_of_repos, data_dict)))))
+	return get_top_containers(get_subjects(get_agents(get_resources(get_parent_objects(get_digital_objects_by_repo(list_of_repos, data_dict))))))
 
 
 
