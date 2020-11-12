@@ -31,3 +31,22 @@ There are very few fields that always come directly from the Archival Object rec
 
 # No dependent fields in mapping (Oct 16 2020)
 In some ETLs complex fields may require the contents of other newly created fields to be made. In this case they depend on the other fields and this would effect the flow of the program so that the dependent fields could be rendered before the ones that require them. This does NOT seem necessary for the Berry Hill transformation. So the code will not be structured to handle dependent fields.
+
+# Raw extract data structure
+The get_extract function returns a dictionary of data extracted from ArchivesSpace containing all those records pertinent to the digital object records with Compass URIs held in the list of repositories passed to the function.
+
+The structure is as follows:
+
+```
+data_dict = {
+  'digital_objects': [],
+  'archival_objects': [],
+  'accessions': [],
+  'resources': [],
+  'subjects': [],
+  'agents': [],
+  'top_containers': [],
+}
+```
+
+This data structure is passed to each transform function to be used as the source data for generating each field. It should never be modified.

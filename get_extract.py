@@ -8,12 +8,12 @@ aspace = ASpace()
 def chunk_ids(id_list):
 	ids = []
 	if len(id_list) > 25:
-		id_chunks = [id_list[uri:uri + 25] for uri in range(0, len(id_list), 25)] 
+		id_chunks = [id_list[uri:uri + 25] for uri in range(0, len(id_list), 25)]
 		for chunk in id_chunks:
 			chunk = [str(i) for i in chunk]
 			chunk = ','.join(chunk)
 			ids.append(chunk)
-	
+
 	else:
 		id_list = [str(i) for i in id_list]
 		id_list = ','.join(id_list)
@@ -54,17 +54,18 @@ def group_agents(uri_list):
 	return all_uris
 
 
-def get_data_dict():
-	extracted_data = {}
-	extracted_data['digital_objects'] = []
-	extracted_data['archival_objects'] = []
-	extracted_data['accessions'] = []
-	extracted_data['resources'] = []	
-	extracted_data['subjects'] = []
-	extracted_data['agents'] = []
-	extracted_data['top_containers'] = []
+def init_data_dict():
+	data_dict = {
+		'digital_objects': [],
+		'archival_objects': [],
+		'accessions': [],
+		'resources': [],
+		'subjects': [],
+		'agents': [],
+		'top_containers': [],
+	}
 
-	return extracted_data
+	return data_dict
 
 
 def get_digital_objects(repo):
@@ -81,7 +82,7 @@ def get_digital_objects(repo):
 
 
 def get_digital_objects_by_repo(list_of_repos, data_dict):
-	for repo in list_of_repos:	
+	for repo in list_of_repos:
 		data_dict['digital_objects'].extend(get_digital_objects(repo))
 
 	return data_dict
@@ -193,10 +194,5 @@ def get_top_containers(data_dict):
 
 
 def get_extract(list_of_repos):
-	data_dict = get_data_dict()
+	data_dict = init_data_dict()
 	return get_top_containers(get_subjects(get_agents(get_resources(get_parent_objects(get_digital_objects_by_repo(list_of_repos, data_dict))))))
-
-
-
-
-
