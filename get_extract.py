@@ -71,13 +71,14 @@ def init_data_dict():
 def get_digital_objects(repo):
 	r = aspace.repositories(repo)
 	dos = r.digital_objects()
-	digital_objects = []
+	digital_objects = {}
 	for do in dos:
 		for file_version in do.json()['file_versions']:
 			if 'compass' in file_version['file_uri']:
+				# If there's more than one file version don't add the DO again.
 				if not do.json() in digital_objects:
-					digital_objects.append(do.json())
-
+					do_data = do.json()
+					digital_objects[do_data['digital_object_id']] = do_data
 	return digital_objects
 
 

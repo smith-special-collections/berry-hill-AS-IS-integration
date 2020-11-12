@@ -1,15 +1,15 @@
 # Procedure:
 
 # ~Extract~
-# 1. Get all Digital Objects (with compass URIs)
+# 1. Get all Digital Objects (that have compass URIs)
 # 2. Get all Archival Objects/Resources/Accessions connected to digital objects
 # 3. Get all Agents (in a minimum of queries using id_set)
 # 4. Get all Subjects (in a minimum of queries using id_set)
-# 5. Save this all into a giant data structure called "extracted_data"
+# 5. Get all top containers linked to the associated archival objects
+# 6. Save this all into a giant data structure called "EXTRACTED_DATA"
 
 # Make a list of all of the output records to be exported and their destination file names
-  # From the list of Digital Objects get those that have a Compass URI
-  # Save them to the to_export list as a list of tuples/dictionaries of the digital object ID and the output filename
+# Save them to the to_export list as a list of tuples/dictionaries of the digital object ID and the output filename
 
 # Loop through each intended output record
   # ~Transform~
