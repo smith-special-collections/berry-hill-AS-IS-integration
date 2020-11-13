@@ -57,7 +57,11 @@ if __name__ == '__main__':
 		do_id = current_record[0]
 		template_context = {}
 		for field_name, field_recipe in MAPPING.items():
-			transform_method = getattr(transforms, field_recipe['transform_function'])
+			try:
+				transform_method = getattr(transforms, field_recipe['transform_function'])
+			except AttributeError as e:
+				print("No transform named '%s'. Please add a transform method to the Transforms class in transform.py." % field_recipe['transform_function'])
+				exit(0)
 
 			try:
 				transform_return_value = transform_method(EXTRACTED_DATA, do_id)

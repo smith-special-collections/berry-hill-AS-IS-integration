@@ -14,5 +14,5 @@ class Transforms():
     saved to the template_context data structure.
     """
 
-    def titled(self, EXTRACTED_DATA, do_id):
+    def title(self, EXTRACTED_DATA, do_id):
         return EXTRACTED_DATA['digital_objects'][do_id]['title']
