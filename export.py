@@ -6,6 +6,7 @@ import json
 import argparse
 import re
 import logging
+from transform import MAPPING, Transforms
 
 argparser = argparse.ArgumentParser(description="Export MODS metadata from ArchivesSpace digital objects")
 argparser.add_argument('--cachefile', default=None, help="Name of a json file containing cached data. For development and testing purposes.")
@@ -16,12 +17,11 @@ def get_export_list(EXTRACTED_DATA):
 	to_export = []
 	for do_id, do_data in EXTRACTED_DATA['digital_objects'].items():
 		compass_pid = get_compass_pid(do_data)
-		pp(compass_pid)
 		if compass_pid is not None:
 			filename = compass_pid.replace(':', '_') + '_MODS.xml'
 			to_export.append((do_id, filename))
 		else:
-			logging.ERROR("Could not find valid pid for %s" % do_id)
+			logging.error("Could not find valid pid for %s" % do_id)
 	return to_export
 
 def get_compass_pid(do_data):
@@ -51,5 +51,29 @@ if __name__ == '__main__':
 
 	to_export = get_export_list(EXTRACTED_DATA)
 
+	transforms = Transforms()
+
+	for current_record in to_export:
+		do_id = current_record[0]
+		template_context = {}
+		for field_name, field_recipe in MAPPING.items():
+			transform_method = getattr(transforms, field_recipe['transform_function'])
+
+			try:
+				transform_return_value = transform_method(EXTRACTED_DATA, do_id)
+			except Exception as e:
+				logging.warning("%s %s %s" % (do_id, field_name, str(e)))
+				transform_return_value = None
+
+			if (transform_return_value is None) | (transform_return_value == ''):
+				if ('required' in field_recipe) & (field_recipe['required'] is True):
+					logging.error("Required field '%s' missing in %s. Skipping record." % (field_name, do_id))
+					continue
+				else:
+					logging.warning("Field %s could not be generated for %s" % (field_name, do_id))
+			else:
+				template_context[field_name] = transform_return_value
+
+#			pp(template_context)
+
 	import pdb; pdb.set_trace()
-	pp('Extract done.')
