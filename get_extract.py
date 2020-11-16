@@ -24,33 +24,13 @@ def chunk_ids(id_list):
 
 def group_uris(uri_list):
 	all_uris = {}
-	all_uris['2'] = []
-	all_uris['3'] = []
-	all_uris['4'] = []
 	for uri in uri_list:
-		if '/repositories/2' in uri:
-			all_uris['2'].append(uri.split('/')[-1])
-		elif '/repositories/3' in uri:
-			all_uris['3'].append(uri.split('/')[-1])
-		elif '/repositories/4' in uri:
-			all_uris['4'].append(uri.split('/')[-1])
-
-	return all_uris
-
-
-def group_agents(uri_list):
-	all_uris = {}
-	all_uris['corporate_entities'] = []
-	all_uris['people'] = []
-	all_uris['families'] = []
-	for uri in uri_list:
-		if 'corporate' in uri:
-			all_uris['corporate_entities'].append(uri.split('/')[-1])
-		elif 'people' in uri:
-			all_uris['people'].append(uri.split('/')[-1])
-		elif 'families' in uri:
-			all_uris['families'].append(uri.split('/')[-1])
-
+		uri_elems = uri.split('/')
+		k = uri_elems[2]
+		if k not in all_uris:
+			all_uris[k] = []
+		all_uris[k].append(uri_elems[-1])
+	
 	return all_uris
 
 
@@ -60,9 +40,9 @@ def init_data_dict():
 		'archival_objects': {},
 		'accessions': {},
 		'resources': {},
-		'subjects': [],
-		'agents': [],
-		'top_containers': [],
+		'subjects': {},
+		'agents': {},
+		'top_containers': {},
 	}
 
 	return data_dict
@@ -75,23 +55,22 @@ def get_digital_objects(repo):
 	for do in dos:
 		for file_version in do.json()['file_versions']:
 			if 'compass' in file_version['file_uri']:
-				# If there's more than one file version don't add the DO again.
+				# If there's more than one file version, don't add the DO again.
 				do_data = do.json()
 				if not do_data['digital_object_id'] in digital_objects:
 					digital_objects[do_data['digital_object_id']] = do_data
 
 	return digital_objects
 
+
 def get_digital_objects_by_repo(list_of_repos, data_dict):
 	for repo in list_of_repos:
 		data_dict['digital_objects'] = {**data_dict['digital_objects'], **get_digital_objects(repo)}
 	return data_dict
 
+
 def get_parent_objects(data_dict):
 	all_ao_uris = []
-	data_dict['resources'] = {}
-	data_dict['accessions'] = {}
-	data_dict['archival_objects'] = {}
 	for _, do in data_dict['digital_objects'].items():
 		for instance in do['linked_instances']:
 			if 'archival_objects' in instance['ref']:
@@ -119,7 +98,7 @@ def get_parent_objects(data_dict):
 
 def get_resources(data_dict):
 	resource_uris = []
-	for ao in data_dict['archival_objects']:
+	for _, ao in data_dict['archival_objects'].items():
 		try:
 			if not ao['resource']['ref'] in resource_uris:
 				resource_uris.append(ao['resource']['ref'])
@@ -134,7 +113,7 @@ def get_resources(data_dict):
 			resources_list = resources.json()
 			resources_dict = {}
 			for resource_data in resources_list:
-				resources_dict[resource['uri']] = resource_data
+				resources_dict[resource_data['uri']] = resource_data
 			data_dict['resources'] = {**data_dict['resources'], **resources_dict}
 
 	return data_dict
@@ -148,19 +127,23 @@ def get_agents(data_dict):
 				if not agent['ref'] in agent_uris:
 					agent_uris.append(agent['ref'])
 
-	for r in data_dict['resources']:
+	for _, r in data_dict['resources'].items():
 		if len(r['linked_agents']) > 0:
 			for agent in r['linked_agents']:
 				if not agent['role'] == 'subject':
 					if not agent['ref'] in agent_uris:
 						agent_uris.append(agent['ref'])
 
-	agents_grouped_by_type = group_agents(agent_uris)
+	agents_grouped_by_type = group_uris(agent_uris)
 	for k, v in agents_grouped_by_type.items():
 		chunks = chunk_ids(v)
 		for chunk in chunks:
 			agents = aspace.client.get(f'/agents/{k}?id_set={chunk}')
-			data_dict['agents'].extend(agents.json())
+			agents_list = agents.json()
+			agents_dict = {}
+			for agent_data in agents_list:
+				agents_dict[agent_data['uri']] = agent_data
+			data_dict['agents'] = {**data_dict['agents'], **agents_dict}
 
 	return data_dict
 
@@ -176,7 +159,11 @@ def get_subjects(data_dict):
 	chunks = chunk_ids(subject_uris)
 	for chunk in chunks:
 		subjects = aspace.client.get(f'/subjects?id_set={chunk}')
-		data_dict['subjects'].extend(subjects.json())
+		subjects_list = subjects.json()
+		subjects_dict = {}
+		for subject_data in subjects_list:
+			subjects_dict[subject_data['uri']] = subject_data
+		data_dict['subjects'] = {**data_dict['subjects'], **subjects_dict}
 
 	return data_dict
 
@@ -191,12 +178,17 @@ def get_top_containers(data_dict):
 						top_container_uris.append(i['sub_container']['top_container']['ref'])
 				except KeyError:
 					pass
+	
 	grouped_by_repo = group_uris(top_container_uris)
 	for k, v in grouped_by_repo.items():
 		chunks = chunk_ids(v)
 		for chunk in chunks:
 			tcs = aspace.client.get(f'/repositories/{k}/top_containers?id_set={chunk}')
-			data_dict['top_containers'].extend(tcs.json())
+			tcs_list = tcs.json()
+			tcs_dict = {}
+			for tc_data in tcs_list:
+				tcs_dict[tc_data['uri']] = tc_data
+			data_dict['top_containers'] = {**data_dict['top_containers'], **tcs_dict}
 
 	return data_dict
 
@@ -204,4 +196,10 @@ def get_top_containers(data_dict):
 
 def get_extract(list_of_repos):
 	data_dict = init_data_dict()
-	return get_top_containers(get_subjects(get_agents(get_resources(get_parent_objects(get_digital_objects_by_repo(list_of_repos, data_dict))))))
+	data_dict = get_digital_objects_by_repo(list_of_repos, data_dict)
+	data_dict = get_parent_objects(data_dict)
+	data_dict = get_resources(data_dict)
+	data_dict = get_agents(data_dict)
+	data_dict = get_subjects(data_dict)
+	data_dict = get_top_containers(data_dict)
+	return data_dict
