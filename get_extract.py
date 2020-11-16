@@ -56,7 +56,7 @@ def group_agents(uri_list):
 
 def init_data_dict():
 	data_dict = {
-		'digital_objects': [],
+		'digital_objects': {},
 		'archival_objects': [],
 		'accessions': [],
 		'resources': [],
@@ -76,22 +76,20 @@ def get_digital_objects(repo):
 		for file_version in do.json()['file_versions']:
 			if 'compass' in file_version['file_uri']:
 				# If there's more than one file version don't add the DO again.
-				if not do.json() in digital_objects:
-					do_data = do.json()
+				do_data = do.json()
+				if not do_data['digital_object_id'] in digital_objects:
 					digital_objects[do_data['digital_object_id']] = do_data
-	return digital_objects
 
+	return digital_objects
 
 def get_digital_objects_by_repo(list_of_repos, data_dict):
 	for repo in list_of_repos:
-		data_dict['digital_objects'].extend(get_digital_objects(repo))
-
+		data_dict['digital_objects'] = {**data_dict['digital_objects'], **get_digital_objects(repo)}
 	return data_dict
-
 
 def get_parent_objects(data_dict):
 	all_ao_uris = []
-	for do in data_dict['digital_objects']:
+	for _, do in data_dict['digital_objects'].items():
 		for instance in do['linked_instances']:
 			if 'archival_objects' in instance['ref']:
 				if not instance['ref'] in all_ao_uris:

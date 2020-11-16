@@ -50,3 +50,6 @@ data_dict = {
 ```
 
 This data structure is passed to each transform function to be used as the source data for generating each field. It should never be modified.
+
+# Python version
+This project will use Python 3.5. Python 3 is a must for native support unicode, and to follow best practices in the Python community. However, versions later than 3.5 are less likely to be available on Smith managed servers so we are sticking with 3.5.
