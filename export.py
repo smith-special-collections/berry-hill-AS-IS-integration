@@ -61,7 +61,7 @@ if __name__ == '__main__':
 				transform_method = getattr(transforms, field_recipe['transform_function'])
 			except AttributeError as e:
 				print("No transform named '%s'. Please add a transform method to the Transforms class in transform.py." % field_recipe['transform_function'])
-				exit(0)
+				exit(1)
 
 			try:
 				transform_return_value = transform_method(EXTRACTED_DATA, do_id)
