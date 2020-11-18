@@ -68,16 +68,14 @@ if __name__ == '__main__':
 			except Exception as e:
 				logging.warning("%s %s %s" % (do_id, field_name, str(e)))
 				transform_return_value = None
-
-			if (transform_return_value is None) | (transform_return_value == ''):
+			if (transform_return_value is None) | (transform_return_value == '') | (transform_return_value == []):
 				if ('required' in field_recipe) & (field_recipe['required'] is True):
 					logging.error("Required field '%s' missing in %s. Skipping record." % (field_name, do_id))
 					continue
 				else:
 					logging.warning("Field %s could not be generated for %s" % (field_name, do_id))
+					template_context[field_name] = transform_return_value
 			else:
 				template_context[field_name] = transform_return_value
-
-#			pp(template_context)
 
 	import pdb; pdb.set_trace()
