@@ -45,11 +45,11 @@ def macro_setup(aspace, repo_agent, repo, resource):
     enumeration = aspace.client.get(f'/config/enumerations/23').json()
     enumeration['values'].append('homosaurus')
     enumeration_post = aspace.client.post('/config/enumerations/23', json=enumeration)
-
+    # pp(uri_dict)
     return uri_dict
 
 
-def micro_setup(aspace, uri_dict, resource, archival_object, digital_object, agents, subjects, top_container):
+def micro_setup(aspace, uri_dict, archival_object, digital_object, agents, subjects, top_container):
     'Creates Archival Object record and associated records for testing'
 
     # Create do
@@ -73,7 +73,7 @@ def micro_setup(aspace, uri_dict, resource, archival_object, digital_object, age
         logging.error('Failure to create Top Container')
         pp(top_container_post.json())
         exit()
-    
+
     # Create agents
     uri_dict['agent_uris'] = []
     for agent in agents:
@@ -121,17 +121,6 @@ def micro_setup(aspace, uri_dict, resource, archival_object, digital_object, age
             pp(subject_post.json())
             exit()
 
-    # # Create resource
-    # try:
-    #     resource_post = aspace.client.post(uri_dict['repo_uri'] + '/resources', json=resource)
-    #     resource_uri = resource_post.json()['uri']
-    #     uri_dict['resource_uri'] = resource_uri
-    #     logging.info('Resource created')
-    # except KeyError:
-    #     logging.error('Failure to create Resource')
-    #     pp(resource_post.json())
-    #     exit()
-
     # Create ao
     agent_roles = ['source', 'creator', 'subject']
     archival_object['instances'][0]['sub_container']['top_container']['ref'] = top_container_uri
@@ -143,7 +132,7 @@ def micro_setup(aspace, uri_dict, resource, archival_object, digital_object, age
     for subject_uri in uri_dict['subject_uris']:
         linked_subject = {'ref': subject_uri}
         archival_object['subjects'].append(linked_subject)
-    archival_object['resource']['ref'] = resource_uri
+    archival_object['resource']['ref'] = uri_dict['resource_uri']
     try:
         archival_object_post = aspace.client.post(uri_dict['repo_uri'] + '/archival_objects', json=archival_object)
         archival_object_uri = archival_object_post.json()['uri']
@@ -153,7 +142,7 @@ def micro_setup(aspace, uri_dict, resource, archival_object, digital_object, age
         logging.error('Failure to create Archival Object')
         pp(archival_object_post.json())
         exit()
-
+    # pp(uri_dict)
     return uri_dict
 
 
@@ -176,20 +165,4 @@ def macro_teardown(aspace, uri_dict):
     logging.info('{} deleted'.format(uri_dict['repo_agent_uri']))
 
 
-if __name__ == "__main__":
-
-    logging.basicConfig(level=logging.INFO)
-    aspace = ASpace()
-
-    # pp(aspace.client.get('/repositories?all_ids=true').json())
-
-    # uri_dict = macro_setup(aspace, repo_agent, repo)
-    # time.sleep(10)
-    # uri_dict = micro_setup(aspace, uri_dict, resource, archival_object, digital_object, agents, subjects, top_container)
-
-    # time.sleep(5)
-    # import pdb
-    # pdb.set_trace()
-    # micro_teardown(uri_dict)
-    # macro_teardown(uri_dict)
 
