@@ -57,20 +57,6 @@ def before_all(context):
 	formatted_islandora_pid = islandora_pid.replace(':', '_')
 	context.filename = formatted_islandora_pid + '_MODS'
 
-	os.chdir('../')
-	os.getcwd()
-	exporter_command = ['python3', 'export.py', 'tests/features']
-	print(exporter_command)
-	subprocess.call(exporter_command)
-
-	os.chdir('tests/features')
-	os.getcwd()
-	with open(context.filename + '.xml', 'rb') as fobj:
-		xml = fobj.read()
-
-	context.xml_output_tree = etree.XML(xml)
-	print(context.data)
-
 # Delete all created records
 def after_all(context):
 	logging.info("Cleaning up")

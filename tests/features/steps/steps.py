@@ -6,6 +6,7 @@ import time
 import json
 from asnake.aspace import ASpace
 import logging
+import tempfile
 
 logging.basicConfig(level=logging.INFO)
 
@@ -39,9 +40,15 @@ def step_impl(context):
 
 @when('I run the exporter')
 def step_imp(context):
-	import pdb, sys;
-	pdb.Pdb(stdout=sys.__stdout__).set_trace()
-	pass
+	context.temp_export_output_dir = tempfile.TemporaryDirectory()
+	os.chdir('../')
+	os.system('python export.py %s' % context.temp_export_output_dir.name)
+	os.system('ls %s' % context.temp_export_output_dir.name)
+	# import pdb, sys; pdb.Pdb(stdout=sys.__stdout__).set_trace()
+	with open(context.temp_export_output_dir.name + '/' + context.filename + '.xml', 'rb') as fobj:
+		xml = fobj.read()
+
+	context.xml_output_tree = etree.XML(xml)
 
 @then('I should see a <titleInfo><title> tag that reads "{title}"')
 def step_impl(context, title):
