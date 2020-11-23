@@ -10,17 +10,30 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 
-@given('I set the title of the Digital Object to "Strachey to Woolf"')
-def step_impl(context):
-	pass
+@given('I set the title of the Digital Object to "{title}"')
+def step_impl(context, title):
+	aspace = ASpace()
 
+	context.data['digital_object'][0]['title'] = title
+	uri = [uri for uri in context.uris if 'digital_objects' in uri]
+	aspace.client.post(uri[0], json=context.data['digital_object'][0])
+	
 
-@given('I set the title of the Archival Object to "Not This"')
-def step_impl(context):
-	pass
+@given('I set the title of the Archival Object to "{title}"')
+def step_impl(context, title):
+	aspace = ASpace()
+
+	context.data['archival_object'][0]['title'] = title
+	uri = [uri for uri in context.uris if 'archival_objects' in uri]
+	aspace.client.post(uri[0], json=context.data['archival_object'][0])
 
 
 @given('I set the date of the Archival Object to "1917 Dec 21"')
+def step_impl(context):
+	pass
+
+
+@given('I set the id of the Digital Object to "smith_mrbc_ms00001_as38141_00')
 def step_impl(context):
 	pass
 
@@ -37,4 +50,7 @@ def step_impl(context, title):
 	assert tag != title, 'Tag text not as expected! Wanted: {}. Returned: {}'.format(title, tag) 
 
 	
-
+@then('I should see an <identifier> tag with an attribute of local that reads "{do_id}"')
+def step_impl(context, title):
+	tag = context.xml_output_tree.xpath('x:identifier[@type=local]', namespaces={'x':'http://www.loc.gov/mods/v3'})[0].text
+	assert tag == do_id, 'Tag text not as expected! Wanted: {}. Returned: {}'.format(do_id, tag) 

@@ -26,7 +26,7 @@ def before_all(context):
 			logging.error(e)
 			exit()
 
-
+	context.data = data
 	aspace = ASpace()
 	context.uris = []
 	uri_dict = add_test_records.macro_setup(aspace, data['repo_agent'][0], data['repo'][0], data['resource'][0])
@@ -35,7 +35,7 @@ def before_all(context):
 	context.uris.append(uri_dict['repo_agent_uri'])
 	context.uris.append(uri_dict['resource_uri'])
 
-	time.sleep(10)
+	time.sleep(5)
 	uri_dict = add_test_records.micro_setup(aspace, uri_dict, data['archival_object'][0], data['digital_object'][0], data['agents'][0], data['subjects'][0], data['top_container'][0])	
 	
 	context.uris.append(uri_dict['do_uri'])
@@ -43,7 +43,7 @@ def before_all(context):
 	context.uris.extend(uri_dict['agent_uris'])
 	context.uris.extend(uri_dict['subject_uris'])
 	context.uris.append(uri_dict['ao_uri'])
-
+	
 	# Save file name of exporter output
 	regex = '(smith:+?\d+)'
 	uris = [uri['file_uri'] for uri in data['digital_object'][0]['file_versions'] if 'compass' in uri['file_uri']]
@@ -62,11 +62,11 @@ def before_all(context):
 		xml = fobj.read()
 
 	context.xml_output_tree = etree.XML(xml)
-	# print(context.xml_output_tree.xpath('x:titleInfo/x:title', namespaces={'x':'http://www.loc.gov/mods/v3'})[0].text)
+	print(context.data)
 
 # Delete all created records
 def after_all(context):
-	aspace = ASpace()
-	for uri in context.uris:
-		delete = aspace.client.delete(uri).json()
-	# pass
+	# aspace = ASpace()
+	# for uri in context.uris:
+	# 	delete = aspace.client.delete(uri).json()
+	pass
