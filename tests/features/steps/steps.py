@@ -17,7 +17,7 @@ def step_impl(context, title):
 	context.data['digital_object'][0]['title'] = title
 	uri = [uri for uri in context.uris if 'digital_objects' in uri]
 	aspace.client.post(uri[0], json=context.data['digital_object'][0])
-	
+
 
 @given('I set the title of the Archival Object to "{title}"')
 def step_impl(context, title):
@@ -37,20 +37,25 @@ def step_impl(context):
 def step_impl(context):
 	pass
 
+@when('I run the exporter')
+def step_imp(context):
+	import pdb, sys;
+	pdb.Pdb(stdout=sys.__stdout__).set_trace()
+	pass
 
 @then('I should see a <titleInfo><title> tag that reads "{title}"')
 def step_impl(context, title):
 	tag = context.xml_output_tree.xpath('x:titleInfo/x:title', namespaces={'x':'http://www.loc.gov/mods/v3'})[0].text
-	assert tag == title, 'Tag text not as expected! Wanted: {}. Returned: {}'.format(title, tag) 
+	assert tag == title, 'Tag text not as expected! Wanted: {}. Returned: {}'.format(title, tag)
 
 
 @then('I should not see a <titleInfo><title> tag that reads "{title}"')
 def step_impl(context, title):
 	tag = context.xml_output_tree.xpath('x:titleInfo/x:title', namespaces={'x':'http://www.loc.gov/mods/v3'})[0].text
-	assert tag != title, 'Tag text not as expected! Wanted: {}. Returned: {}'.format(title, tag) 
+	assert tag != title, 'Tag text not as expected! Wanted: {}. Returned: {}'.format(title, tag)
 
-	
+
 @then('I should see an <identifier> tag with an attribute of local that reads "{do_id}"')
 def step_impl(context, title):
 	tag = context.xml_output_tree.xpath('x:identifier[@type=local]', namespaces={'x':'http://www.loc.gov/mods/v3'})[0].text
-	assert tag == do_id, 'Tag text not as expected! Wanted: {}. Returned: {}'.format(do_id, tag) 
+	assert tag == do_id, 'Tag text not as expected! Wanted: {}. Returned: {}'.format(do_id, tag)
