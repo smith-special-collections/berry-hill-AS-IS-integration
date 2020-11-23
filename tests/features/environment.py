@@ -52,21 +52,21 @@ def before_all(context):
 	formatted_islandora_pid = islandora_pid.replace(':', '_')
 	context.filename = formatted_islandora_pid + '_MODS'
 
-	os.chdir('../')
-	os.getcwd()
-	subprocess.call(['python3', 'export.py', 'tests/features'])
+	# os.chdir('../')
+	# os.getcwd()
+	# subprocess.call(['python3', 'export.py', 'tests/features'])
 
-	os.chdir('tests/features')
-	os.getcwd()
-	with open(context.filename + '.xml', 'rb') as fobj:
-		xml = fobj.read()
+	# os.chdir('tests/features')
+	# os.getcwd()
+	# with open(context.filename + '.xml', 'rb') as fobj:
+	# 	xml = fobj.read()
 
-	context.xml_output_tree = etree.XML(xml)
-	print(context.data)
+	# context.xml_output_tree = etree.XML(xml)
+	# print(context.data)
 
 # Delete all created records
 def after_all(context):
-	# aspace = ASpace()
-	# for uri in context.uris:
-	# 	delete = aspace.client.delete(uri).json()
-	pass
+	aspace = ASpace()
+	for uri in context.uris:
+		delete = aspace.client.delete(uri).json()
+	# pass
