@@ -13,7 +13,6 @@ def chunk_ids(id_list):
 			chunk = [str(i) for i in chunk]
 			chunk = ','.join(chunk)
 			ids.append(chunk)
-
 	else:
 		id_list = [str(i) for i in id_list]
 		id_list = ','.join(id_list)
@@ -191,7 +190,6 @@ def get_top_containers(data_dict):
 			data_dict['top_containers'] = {**data_dict['top_containers'], **tcs_dict}
 
 	return data_dict
-
 
 
 def get_extract(list_of_repos):
