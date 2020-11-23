@@ -6,12 +6,19 @@ import json
 import argparse
 import re
 import logging
+import os.path
+import jinja2
 from transform import MAPPING, Transforms
+
 
 argparser = argparse.ArgumentParser(description="Export MODS metadata from ArchivesSpace digital objects")
 argparser.add_argument('--cachefile', default=None, help="Name of a json file containing cached data. For development and testing purposes.")
+argparser.add_argument("OUTPUTPATH", help="File path for record output.")
 cliargs = argparser.parse_args()
 CACHEFILE = cliargs.cachefile
+
+
+logging.basicConfig(level=logging.INFO)
 
 def get_export_list(EXTRACTED_DATA):
 	to_export = []
@@ -24,6 +31,7 @@ def get_export_list(EXTRACTED_DATA):
 			logging.error("Could not find valid pid for %s" % do_id)
 	return to_export
 
+
 def get_compass_pid(do_data):
 	namespace = 'smith'
 	for file_version in do_data['file_versions']:
@@ -32,14 +40,30 @@ def get_compass_pid(do_data):
 			if matches is not None:
 				return matches[0]
 
+
+def render_record(mapping): 
+    templateLoader = jinja2.FileSystemLoader(searchpath=".")
+    templateEnv = jinja2.Environment(loader=templateLoader)
+
+    # Merge the template and data
+    template = templateEnv.get_template('compass-mods-template.xml')
+
+    return template.render(mapping)
+
+
 if __name__ == '__main__':
 
 	aspace = ASpace()
 
-	config = configparser.ConfigParser()
-	config.read('config.ini')
+	# config = configparser.ConfigParser()
+	# config.read('config.ini')
 
-	repos = config['repos']['repos'].split(',')
+	# repos = config['repos']['repos'].split(',')
+	repo_data = aspace.client.get('/repositories?all_ids=true').json()
+	repos = []
+	for repo in repo_data:
+		repo_id = repo['uri'].split('/')[-1]
+		repos.append(repo_id)
 
 	if CACHEFILE is None:
 		EXTRACTED_DATA = get_extract(repos)
@@ -53,29 +77,50 @@ if __name__ == '__main__':
 
 	transforms = Transforms()
 
-	for current_record in to_export:
-		do_id = current_record[0]
-		template_context = {}
-		for field_name, field_recipe in MAPPING.items():
-			try:
-				transform_method = getattr(transforms, field_recipe['transform_function'])
-			except AttributeError as e:
-				print("No transform named '%s'. Please add a transform method to the Transforms class in transform.py." % field_recipe['transform_function'])
-				exit(1)
+	save_path = cliargs.OUTPUTPATH
 
-			try:
-				transform_return_value = transform_method(EXTRACTED_DATA, do_id)
-			except Exception as e:
-				logging.warning("%s %s %s" % (do_id, field_name, str(e)))
-				transform_return_value = None
-			if (transform_return_value is None) | (transform_return_value == '') | (transform_return_value == []):
-				if ('required' in field_recipe) & (field_recipe['required'] is True):
-					logging.error("Required field '%s' missing in %s. Skipping record." % (field_name, do_id))
-					continue
+	if os.path.isdir(save_path) != False:
+		for current_record in to_export:
+			do_id = current_record[0]
+			template_context = {}
+			for field_name, field_recipe in MAPPING.items():
+				try:
+					transform_method = getattr(transforms, field_recipe['transform_function'])
+				except AttributeError as e:
+					print("No transform named '%s'. Please add a transform method to the Transforms class in transform.py." % field_recipe['transform_function'])
+					exit(1)
+
+				try:
+					transform_return_value = transform_method(EXTRACTED_DATA, do_id)
+				except Exception as e:
+					logging.warning("%s %s %s" % (do_id, field_name, str(e)))
+					transform_return_value = None
+				if (transform_return_value is None):
+					if ('required' in field_recipe) & (field_recipe['required'] is True):
+						logging.error("Required field '%s' missing in %s. Skipping record." % (field_name, do_id))
+						# continue
+					else:
+						logging.warning("Field %s could not be generated for %s" % (field_name, do_id))
+						template_context[field_name] = transform_return_value
 				else:
-					logging.warning("Field %s could not be generated for %s" % (field_name, do_id))
 					template_context[field_name] = transform_return_value
-			else:
-				template_context[field_name] = transform_return_value
 
-	import pdb; pdb.set_trace()
+			logging.info('Rendering MODS record for %s' % current_record[0])
+			xml = render_record(template_context)
+			handle = current_record[1]
+			filename = os.path.join(save_path, handle)
+
+			try:
+				with open(filename, "w") as fh:
+					logging.info('Writing %s' % filename)
+					fh.write(xml)
+			except Exception as e:
+				logging.error('File could not be written for %s' % (handle))
+
+		logging.info('All files written.')        
+
+	else:
+		logging.error("Directory not found. Please create if not created. Files cannot be written without an existing directory to store them.")
+		exit(1)
+
+	# import pdb; pdb.set_trace()
