@@ -35,12 +35,28 @@ MAPPING = {
         'transform_function': 'subjects',
         'required': False
     },
+    'genre_subjects': {
+        'transform_function': 'genre_subjects',
+        'required': False
+    },
     'agents': {
         'transform_function': 'agents',
         'required': False
     },
     'extent': {
         'transform_function': 'extent',
+        'required': False
+    },
+    'abstract': {
+        'transform_function': 'abstract',
+        'required': False
+    },
+    'userestrict': {
+        'transform_function': 'userestrict',
+        'required': False
+    },
+    'accessrestrict': {
+        'transform_function': 'accessrestrict',
         'required': False
     }
 }
@@ -74,11 +90,16 @@ class Transforms():
                 ao_uri = ao['uri']
                 return ao_uri
 
-
-    def archival_object_ref(self, EXTRACTED_DATA, do_id):
+    
+    def archival_object(self, EXTRACTED_DATA, do_id):
         ao_uri = self.archival_object_uri(EXTRACTED_DATA, do_id)
         if ao_uri != None:
-            ao = EXTRACTED_DATA['archival_objects'][ao_uri]
+            return EXTRACTED_DATA['archival_objects'][ao_uri]
+
+
+    def archival_object_ref(self, EXTRACTED_DATA, do_id):
+        ao = self.archival_object(EXTRACTED_DATA, do_id)
+        if ao != None:
             ao_ref = ao['ref_id']
             return ao_ref
 
@@ -89,19 +110,23 @@ class Transforms():
             ao = EXTRACTED_DATA['archival_objects'][ao_uri]
             resource_uri = ao['resource']['ref']
             return resource_uri
+  
+    
+    def resource(self, EXTRACTED_DATA, do_id):
+        resource_uri = self.resource_uri(EXTRACTED_DATA, do_id)
+        if resource_uri != None:
+            return EXTRACTED_DATA['resources'][resource_uri]
 
     
     def resource_title(self, EXTRACTED_DATA, do_id):
-        resource_uri = self.resource_uri(EXTRACTED_DATA, do_id)
-        if resource_uri != None:
-            resource = EXTRACTED_DATA['resources'][resource_uri]
+        resource = self.resource(EXTRACTED_DATA, do_id)
+        if resource != None:
             return resource['title']
 
     
     def resource_ms_no(self, EXTRACTED_DATA, do_id):
-        resource_uri = self.resource_uri(EXTRACTED_DATA, do_id)
-        if resource_uri != None:
-            resource = EXTRACTED_DATA['resources'][resource_uri]
+        resource = self.resource(EXTRACTED_DATA, do_id)
+        if resource != None:
             ms_no = resource['id_1'] + ' ' + resource['id_2']
             return ms_no
 
@@ -120,6 +145,18 @@ class Transforms():
         return subjects
 
 
+    def genre_subjects(self, EXTRACTED_DATA, do_id):
+        subjects = self.subjects(EXTRACTED_DATA, do_id)
+        genre_subjects = []
+        for sub in subjects:
+            for term in sub['terms']:
+                if term['type'] == 'genre_form':
+                    if sub not in genre_subjects:
+                        genre_subjects.append(sub)
+
+        return genre_subjects
+
+
     def set_mods_agent_type(self, agent_data):
         if agent_data['jsonmodel_type'] == 'agent_person':
             agent_data['jsonmodel_type'] = 'personal'
@@ -133,10 +170,10 @@ class Transforms():
 
     def agents(self, EXTRACTED_DATA, do_id):
         agents = []
-        ao_uri = self.archival_object_uri(EXTRACTED_DATA, do_id)
-        resource_uri = self.resource_uri(EXTRACTED_DATA, do_id)
-        if ao_uri != None:
-            ao = EXTRACTED_DATA['archival_objects'][ao_uri]
+        ao = self.archival_object(EXTRACTED_DATA, do_id)
+        resource = self.resource(EXTRACTED_DATA, do_id)
+        if ao != None:
+            # Get agents from archival object
             if len(ao['linked_agents']) > 0:
                 for agent in ao['linked_agents']:
                     agent_dict = {}
@@ -144,8 +181,8 @@ class Transforms():
                     agent_uri = agent['ref']
                     agent_dict['agent_data'] = self.set_mods_agent_type(EXTRACTED_DATA['agents'][agent_uri])
                     agents.append(agent_dict)
-        if resource_uri != None:
-            resource = EXTRACTED_DATA['resources'][resource_uri]
+        if resource != None:
+            # Get agents from resource
             if len(resource['linked_agents']) > 0:
                 for agent in resource['linked_agents']:
                     if agent['role'] != 'subject':
@@ -159,15 +196,65 @@ class Transforms():
 
 
     def extent(self, EXTRACTED_DATA, do_id):
-        ao_uri = self.archival_object_uri(EXTRACTED_DATA, do_id)
-        if ao_uri != None:
-            ao = EXTRACTED_DATA['archival_objects'][ao_uri]
+        ao = self.archival_object(EXTRACTED_DATA, do_id)
+        if ao != None:
             if len(ao['extents']) > 0:
                 return ao['extents'][0]
 
 
+    def note_dict(self, notes_json):
+        notes = {}
+        for note in notes_json:
+            try:
+                content = note['subnotes'][0]['content']
+                notes[note['type']] = content
+            except KeyError:
+                continue
+            try:
+                content = note['content'][0]
+                notes[note['type']] = content
+            except KeyError:
+                continue
+
+        return notes
 
 
+    def notes(self, EXTRACTED_DATA, do_id):
+        ao = self.archival_object(EXTRACTED_DATA, do_id)
+        resource = self.resource(EXTRACTED_DATA, do_id)
+        if ao != None:
+            if len(ao['notes']) > 0:
+                ao_notes = self.note_dict(ao['notes'])
+        if resource != None:
+            if len(resource['notes']) > 0:
+                r_notes = self.note_dict(resource['notes'])
+
+        notes = {**ao_notes, **r_notes} 
+        return notes
+
+     
+    def abstract(self, EXTRACTED_DATA, do_id):
+        notes = self.notes(EXTRACTED_DATA, do_id)
+        try:
+            return notes['scopecontent']
+        except KeyError:
+            return None
+
+
+    def userestrict(self, EXTRACTED_DATA, do_id):
+        notes = self.notes(EXTRACTED_DATA, do_id)
+        try:
+            return notes['userestrict']
+        except KeyError:
+            return None
+
+
+    def accessrestrict(self, EXTRACTED_DATA, do_id):
+        notes = self.notes(EXTRACTED_DATA, do_id)
+        try:
+            return notes['accessrestrict']
+        except KeyError:
+            return None
 
 
 
