@@ -6,6 +6,7 @@ import time
 import json
 from asnake.aspace import ASpace
 import logging
+import tempfile
 
 logging.basicConfig(level=logging.INFO)
 
@@ -14,18 +15,20 @@ logging.basicConfig(level=logging.INFO)
 def step_impl(context, title):
 	aspace = ASpace()
 
-	context.data['digital_object'][0]['title'] = title
 	uri = [uri for uri in context.uris if 'digital_objects' in uri]
-	aspace.client.post(uri[0], json=context.data['digital_object'][0])
+	rec = aspace.client.get(uri[0]).json()
+	rec['title'] = title
+	aspace.client.post(rec['uri'], json=rec)
 	
 
 @given('I set the title of the Archival Object to "{title}"')
 def step_impl(context, title):
 	aspace = ASpace()
 
-	context.data['archival_object'][0]['title'] = title
 	uri = [uri for uri in context.uris if 'archival_objects' in uri]
-	aspace.client.post(uri[0], json=context.data['archival_object'][0])
+	rec = aspace.client.get(uri[0]).json()
+	rec['title'] = title
+	aspace.client.post(rec['uri'], json=rec)
 
 
 @given('I set the date of the Archival Object to "1917 Dec 21"')
@@ -36,6 +39,13 @@ def step_impl(context):
 @given('I set the id of the Digital Object to "smith_mrbc_ms00001_as38141_00')
 def step_impl(context):
 	pass
+
+
+@when('I run the exporter')
+def step_impl(context):
+	mytempdir = tempfile.TemporaryDirectory()
+	os.chdir('../')
+	os.system('python3 export.py .')
 
 
 @then('I should see a <titleInfo><title> tag that reads "{title}"')
