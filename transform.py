@@ -39,8 +39,16 @@ MAPPING = {
         'transform_function': 'genre_subjects',
         'required': False
     },
-    'agents': {
-        'transform_function': 'agents',
+    'creator_agents': {
+        'transform_function': 'creator_agents',
+        'required': False
+    },
+    'donor_agents': {
+        'transform_function': 'donor_agents',
+        'required': False
+    },
+    'subject_agents': {
+        'transform_function': 'subject_agents',
         'required': False
     },
     'extent': {
@@ -57,6 +65,18 @@ MAPPING = {
     },
     'accessrestrict': {
         'transform_function': 'accessrestrict',
+        'required': False
+    },
+    'arrangement': {
+        'transform_function': 'arrangement',
+        'required': False
+    },
+    'arrangement_items': {
+        'transform_function': 'arrangement_items',
+        'required': False
+    },
+    'general_notes': {
+        'transform_function': 'general_notes',
         'required': False
     },
     'language': {
@@ -176,11 +196,12 @@ class Transforms():
     def genre_subjects(self, EXTRACTED_DATA, do_id):
         subjects = self.subjects(EXTRACTED_DATA, do_id)
         genre_subjects = []
-        for sub in subjects:
-            for term in sub['terms']:
-                if term['type'] == 'genre_form':
-                    if sub not in genre_subjects:
-                        genre_subjects.append(sub)
+        if len(subjects) > 0:
+            for sub in subjects:
+                for term in sub['terms']:
+                    if term['term_type'] == 'genre_form':
+                        if sub not in genre_subjects:
+                            genre_subjects.append(sub)
 
         return genre_subjects
 
@@ -223,6 +244,39 @@ class Transforms():
         return agents
 
 
+    def subject_agents(self, EXTRACTED_DATA, do_id):
+        subject_agents = []
+        agents = self.agents(EXTRACTED_DATA, do_id)
+        if len(agents) > 0:
+            for agent in agents:
+                if agent['role'] == 'subject':
+                    subject_agents.append(agent)
+
+        return subject_agents
+
+
+    def donor_agents(self, EXTRACTED_DATA, do_id):
+        donor_agents = []
+        agents = self.agents(EXTRACTED_DATA, do_id)
+        if len(agents) > 0:
+            for agent in agents:
+                if agent['role'] == 'source':
+                    donor_agents.append(agent)
+
+        return donor_agents
+
+
+    def creator_agents(self, EXTRACTED_DATA, do_id):
+        creator_agents = []
+        agents = self.agents(EXTRACTED_DATA, do_id)
+        if len(agents) > 0:
+            for agent in agents:
+                if agent['role'] == 'creator':
+                    creator_agents.append(agent)
+
+        return creator_agents
+
+
     def extent(self, EXTRACTED_DATA, do_id):
         ao = self.archival_object(EXTRACTED_DATA, do_id)
         if ao != None:
@@ -231,22 +285,22 @@ class Transforms():
 
 
     def notes(self, EXTRACTED_DATA, do_id, note_type):
-        n = None
+        n = []
         ao = self.archival_object(EXTRACTED_DATA, do_id)
         if ao != None:
             if len(ao['notes']) > 0:
                 for note in ao['notes']:
                      if note['type'] == note_type:
                         if note['publish'] == True:
-                            n = note['subnotes'][0]['content']
-        if n == None:
+                            n.append(note['subnotes'][0]['content'])
+        if len(n) == 0:
             resource = self.resource(EXTRACTED_DATA, do_id)
             if resource != None:
                 if len(resource['notes']) > 0:
                     for note in resource['notes']:
                         if note['publish'] == True:
                             if note['type'] == note_type:
-                                n = note['subnotes'][0]['content']
+                                n.append(note['subnotes'][0]['content'])
 
         return n
 
@@ -264,6 +318,52 @@ class Transforms():
     def accessrestrict(self, EXTRACTED_DATA, do_id):
         accessrestrict = self.notes(EXTRACTED_DATA, do_id, 'accessrestrict')
         return accessrestrict 
+
+
+    def arrangement(self, EXTRACTED_DATA, do_id):
+        arrangement = None
+        ao = self.archival_object(EXTRACTED_DATA, do_id)
+        if ao != None:
+            if len(ao['notes']) > 0:
+                for note in ao['notes']:
+                    if note['type'] == 'arrangement':
+                        arrangement = note['subnotes']
+
+        if arrangement != None:
+            arrangement_dict = {}
+            arrangement_dict['content'] = arrangement[0]['content']
+            try:
+                arrangement_dict['items'] = []
+                for item in arrangement[1]['items']:
+                    arrangement_dict['items'].append(item)
+            except KeyError:
+                arrangement_dict['items'] = None
+            
+            return arrangement_dict
+
+        return arrangement
+
+
+    def arrangement_items(self, EXTRACTED_DATA, do_id):
+        arrangement = self.arrangement(EXTRACTED_DATA, do_id)
+        if isinstance(arrangement, dict):
+            if arrangement['items'] != None:
+                return arrangement['items']
+            else:
+                return None
+
+
+    def general_notes(self, EXTRACTED_DATA, do_id):
+        general_notes = []
+        ao = self.archival_object(EXTRACTED_DATA, do_id)
+        if ao != None:
+            if len(ao['notes']) > 0:
+                for note in ao['notes']:
+                    if note['type'] == 'odd':
+                        if note['publish'] == True:
+                            general_notes.append(note['subnotes'][0])
+
+        return general_notes
 
 
     def language(self, EXTRACTED_DATA, do_id):
