@@ -66,6 +66,26 @@ MAPPING = {
     'dates': {
         'transform_function': 'dates',
         'required': False
+    },
+    'repository': {
+        'transform_function': 'repository',
+        'required': False
+    },
+    'resource_location': {
+        'transform_function': 'resource_location',
+        'required': False
+    },
+    'archival_object_location': {
+        'transform_function': 'archival_object_location',
+        'required': False
+    },
+    'folder_number': {
+        'transform_function': 'folder_number',
+        'required': False
+    },
+    'top_container': {
+        'transform_function': 'top_container',
+        'required': False
     }
 }
 
@@ -135,7 +155,7 @@ class Transforms():
     def resource_ms_no(self, EXTRACTED_DATA, do_id):
         resource = self.resource(EXTRACTED_DATA, do_id)
         if resource != None:
-            ms_no = resource['id_1'] + ' ' + resource['id_2']
+            ms_no = resource['id_0'] + ' ' + resource['id_1'] + ' ' + resource['id_2']
             return ms_no
 
 
@@ -281,6 +301,64 @@ class Transforms():
                     resource['dates']['certainty'] = 'approximate'
                     dates = resource['dates']
         return dates
+
+
+    def repository(self, EXTRACTED_DATA, do_id):
+        repo = None
+        do_uri = self.digital_object_uri(EXTRACTED_DATA, do_id)
+        repo_num = do_uri.split('/')[2]
+        if repo_num == '2':
+            repo = "Sophia Smith Collection of Women's History"
+        elif repo_num == '3':
+            repo = "Mortimer Rare Book Collection"
+        elif repo_num == '4':
+            repo = "College Archives"
+
+        return repo
+
+
+    def resource_location(self, EXTRACTED_DATA, do_id):
+        resource_uri = self.resource_uri(EXTRACTED_DATA, do_id)
+        if resource_uri != None:
+            finding_aid_url = 'https://findingaids.smith.edu' + resource_uri
+            return finding_aid_url
+        else:
+            return None
+
+
+    def archival_object_location(self, EXTRACTED_DATA, do_id):
+        ao_uri = self.archival_object_uri(EXTRACTED_DATA, do_id)
+        if ao_uri != None:
+            finding_aid_url = 'https://findingaids.smith.edu' + ao_uri
+            return finding_aid_url
+        else:
+            return None
+
+
+    def folder_number(self, EXTRACTED_DATA, do_id):
+        ao = self.archival_object(EXTRACTED_DATA, do_id)
+        if ao != None:
+            try:
+                fol = ao['instances'][0]['sub_container']['type_2'].capitalize()
+                num = ao['instances'][0]['sub_container']['indicator_2']
+                return fol + ' ' + num
+            except KeyError:
+                return None
+        else:
+            return None
+
+
+    def top_container(self, EXTRACTED_DATA, do_id):
+        top_container_string = None
+        ao = self.archival_object(EXTRACTED_DATA, do_id)
+        if ao != None:
+            if len(ao['instances']) > 0:
+                for instance in ao['instances']:
+                    if 'sub_container' in instance.keys():
+                        top_container_uri = instance['sub_container']['top_container']['ref']
+                        top_container = EXTRACTED_DATA['top_containers'][top_container_uri]
+                        top_container_string = top_container['display_string']
+        return top_container_string
 
 
 
