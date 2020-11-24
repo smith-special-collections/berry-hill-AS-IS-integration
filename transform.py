@@ -58,6 +58,14 @@ MAPPING = {
     'accessrestrict': {
         'transform_function': 'accessrestrict',
         'required': False
+    },
+    'language': {
+        'transform_function': 'language',
+        'required': False
+    },
+    'dates': {
+        'transform_function': 'dates',
+        'required': False
     }
 }
 
@@ -202,59 +210,77 @@ class Transforms():
                 return ao['extents'][0]
 
 
-    def note_dict(self, notes_json):
-        notes = {}
-        for note in notes_json:
-            try:
-                content = note['subnotes'][0]['content']
-                notes[note['type']] = content
-            except KeyError:
-                continue
-            try:
-                content = note['content'][0]
-                notes[note['type']] = content
-            except KeyError:
-                continue
-
-        return notes
-
-
-    def notes(self, EXTRACTED_DATA, do_id):
+    def notes(self, EXTRACTED_DATA, do_id, note_type):
+        n = None
         ao = self.archival_object(EXTRACTED_DATA, do_id)
-        resource = self.resource(EXTRACTED_DATA, do_id)
         if ao != None:
             if len(ao['notes']) > 0:
-                ao_notes = self.note_dict(ao['notes'])
-        if resource != None:
-            if len(resource['notes']) > 0:
-                r_notes = self.note_dict(resource['notes'])
+                for note in ao['notes']:
+                     if note['type'] == note_type:
+                        if note['publish'] == True:
+                            n = note['subnotes'][0]['content']
+        if n == None:
+            resource = self.resource(EXTRACTED_DATA, do_id)
+            if resource != None:
+                if len(resource['notes']) > 0:
+                    for note in resource['notes']:
+                        if note['publish'] == True:
+                            if note['type'] == note_type:
+                                n = note['subnotes'][0]['content']
 
-        notes = {**ao_notes, **r_notes} 
-        return notes
+        return n
 
      
     def abstract(self, EXTRACTED_DATA, do_id):
-        notes = self.notes(EXTRACTED_DATA, do_id)
-        try:
-            return notes['scopecontent']
-        except KeyError:
-            return None
+        abstract = self.notes(EXTRACTED_DATA, do_id, 'scopecontent')
+        return abstract
 
 
     def userestrict(self, EXTRACTED_DATA, do_id):
-        notes = self.notes(EXTRACTED_DATA, do_id)
-        try:
-            return notes['userestrict']
-        except KeyError:
-            return None
+        userestrict = self.notes(EXTRACTED_DATA, do_id, 'userestrict')
+        return userestrict
 
 
     def accessrestrict(self, EXTRACTED_DATA, do_id):
-        notes = self.notes(EXTRACTED_DATA, do_id)
-        try:
-            return notes['accessrestrict']
-        except KeyError:
-            return None
+        accessrestrict = self.notes(EXTRACTED_DATA, do_id, 'accessrestrict')
+        return accessrestrict 
+
+
+    def language(self, EXTRACTED_DATA, do_id):
+        langs = []
+        ao = self.archival_object(EXTRACTED_DATA, do_id)
+        if ao != None:
+            if len(ao['lang_materials']) > 0:
+                for lang in ao['lang_materials']:
+                    try:
+                        langs.append(lang['language_and_script']['language'])
+                    except KeyError:
+                        continue
+        if len(langs) == 0:
+            resource = self.resource(EXTRACTED_DATA, do_id)
+            if resource != None:
+                if len(resource['lang_materials']) > 0:
+                    for lang in resource['lang_materials']:
+                        try:
+                            langs.append(lang['language_and_script']['language'])
+                        except KeyError:
+                            continue
+        return langs
+
+
+    def dates(self, EXTRACTED_DATA, do_id):
+        dates = None
+        ao = self.archival_object(EXTRACTED_DATA, do_id)
+        if ao != None:
+            if len(ao['dates']) > 0:
+                dates = ao['dates']
+        if dates == None:
+            resource = self.resource(EXTRACTED_DATA, do_id)
+            if resource != None:
+                if len(resource['dates']) > 0:
+                    resource['dates']['certainty'] = 'approximate'
+                    dates = resource['dates']
+        return dates
 
 
 
