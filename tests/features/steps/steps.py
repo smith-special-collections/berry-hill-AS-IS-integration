@@ -78,5 +78,5 @@ def step_impl(context, title):
 
 @then('I should see an <identifier> tag with an attribute of local that reads "{do_id}"')
 def step_impl(context, do_id):
-	tag = context.xml_output_tree.xpath('x:identifier[@type=local]', namespaces={'x':'http://www.loc.gov/mods/v3'})[0].text
+	tag = context.xml_output_tree.xpath('x:identifier[@type="local"]', namespaces={'x':'http://www.loc.gov/mods/v3'})[0].text
 	assert tag == do_id, 'Tag text not as expected! Wanted: {}. Returned: {}'.format(do_id, tag)
