@@ -31,32 +31,37 @@ def step_impl(context, title):
 	aspace.client.post(rec['uri'], json=rec)
 
 
-@given('I set the date of the Archival Object to "1917 Dec 21"')
-def step_impl(context):
-	pass
+@given('I set the date of the Archival Object to "{date}"')
+def step_impl(context, date):
+	aspace = ASpace()
+
+	uri = [uri for uri in context.uris if 'archival_objects' in uri]
+	rec = aspace.client.get(uri[0]).json()
+	rec['dates'][0]['expression'] = date
+	aspace.client.post(rec['uri'], json=rec)
 
 
-@given('I set the id of the Digital Object to "smith_mrbc_ms00001_as38141_00')
-def step_impl(context):
-	pass
+@given('I set the id of the Digital Object to "{do_id}"')
+def step_impl(context, do_id):
+	aspace = ASpace()
+
+	uri = [uri for uri in context.uris if 'digital_objects' in uri]
+	rec = aspace.client.get(uri[0]).json()
+	rec['digital_object_id'] = do_id
+	aspace.client.post(rec['uri'], json=rec)
+
 
 @when('I run the exporter')
 def step_imp(context):
 	context.temp_export_output_dir = tempfile.TemporaryDirectory()
 	os.chdir('../')
-	os.system('python export.py %s' % context.temp_export_output_dir.name)
+	os.system('python3 export.py %s' % context.temp_export_output_dir.name)
 	os.system('ls %s' % context.temp_export_output_dir.name)
 	# import pdb, sys; pdb.Pdb(stdout=sys.__stdout__).set_trace()
 	with open(context.temp_export_output_dir.name + '/' + context.filename + '.xml', 'rb') as fobj:
 		xml = fobj.read()
 
 	context.xml_output_tree = etree.XML(xml)
-
-@when('I run the exporter')
-def step_impl(context):
-	mytempdir = tempfile.TemporaryDirectory()
-	os.chdir('../')
-	os.system('python3 export.py .')
 
 
 @then('I should see a <titleInfo><title> tag that reads "{title}"')
@@ -72,6 +77,6 @@ def step_impl(context, title):
 
 
 @then('I should see an <identifier> tag with an attribute of local that reads "{do_id}"')
-def step_impl(context, title):
+def step_impl(context, do_id):
 	tag = context.xml_output_tree.xpath('x:identifier[@type=local]', namespaces={'x':'http://www.loc.gov/mods/v3'})[0].text
 	assert tag == do_id, 'Tag text not as expected! Wanted: {}. Returned: {}'.format(do_id, tag)
