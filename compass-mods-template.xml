@@ -8,7 +8,7 @@
 <!-- Title -->
 {%- if title %}
 <titleInfo>
-  <title>{{title.rstrip()|e}}</title>
+  <title>{{title.rstrip()|e}} {%- if excerpts != None %}{{excerpts}}{%- endif %}</title>
 </titleInfo>
 {%- endif %}
 
@@ -29,12 +29,14 @@
 {%- endif %}
 
 <!-- Language of materials  -->
+{%- if language != None %}
 {%- if language|length > 0 %}
 {%- for lang in language %}
 <language>
   <languageTerm type="code">{{lang}}</languageTerm>
 </language>
 {%- endfor %}
+{%- endif %}
 {%- endif %}
 
 <!-- Repository name -->
@@ -48,18 +50,21 @@
 <!-- Extent --> 
 {%- if extent != None %}
 <physicalDescription>
-  <extent>{{extent.number}} {{extent.extent_type}} {%- if extent.container_summary %} ({{extent.container_summary}}{%- endif %} {%- if extent.physical_details %} {{extent.physical_details}}{%- endif %} ; {%- if extent.dimensions %} {{extent.dimensions}}{%- endif %})</extent>
+  <extent>{{extent.number}} {{extent.extent_type}} {%- if extent.container_summary %} ({{extent.container_summary}}{%- endif %} {%- if extent.physical_details %} {{extent.physical_details}}{%- endif %}  {%- if extent.dimensions %} ; {{extent.dimensions}}{%- endif %})</extent>
 </physicalDescription>
 {%- endif %}
 
 <!-- Genres -->
+{%- if genre_subjects != None %}
 {%- if genre_subjects|length > 0 %}
 {%- for sub in genre_subjects %}
 <genre{% if sub.source %} authority="{{sub.source}}"{% endif %}{% if sub.authority_id %} valueURI="{{sub.authority_id}}"{% endif %}>{{sub.title|e}}</genre> 
 {%- endfor %}
 {%- endif %}
+{%- endif %}
 
 <!-- Subjects -->
+{%- if subjects != None %}
 {%- if subjects|length > 0 %}
 {%- for subject in subjects %}
 <subject{% if subject.source %} authority="{{subject.source}}"{% endif %}{% if subject.authority_id %} valueURI="{{subject.authority_id}}"{% endif %}>
@@ -76,8 +81,10 @@
 </subject>  
 {%- endfor %}
 {%- endif %}
+{%- endif %}
 
 <!-- Agents as subjects -->
+{%- if subject_agents != None %}
 {%- if subject_agents|length > 0 %}
 {%- for agent in subject_agents %}
 <subject{%- if agent.agent_data.display_name.source %} authority="{{agent.agent_data.display_name.source}}"{%- endif %} {%- if agent.agent_data.display_name.authority_id %} valueURI="{{agent.agent_data.display_name.authority_id}}" {%- endif %}>
@@ -85,8 +92,10 @@
 </subject>
 {%- endfor %}
 {%- endif %}
+{%- endif %}
 
 <!-- Agents as donors or creators -->
+{%- if creator_agents != None %}
 {%- if creator_agents|length > 0 %}
 {%- for agent in creator_agents %}
 <name type="{{agent.agent_data.jsonmodel_type}}" {%- if agent.agent_data.display_name.source %} authority="{{agent.agent_data.display_name.source}}"{%- endif %} {%- if agent.agent_data.display_name.authority_id %} valueURI="{{agent.agent_data.display_name.authority_id}}" {%- endif %}>
@@ -98,7 +107,9 @@
 </name>
 {%- endfor %}
 {%- endif %}
+{%- endif %}
 
+{%- if donor_agents != None %}
 {%- if donor_agents|length > 0 %}
 {%- for agent in donor_agents %}
 <name type="{{agent.agent_data.jsonmodel_type}}"{%- if agent.agent_data.display_name.source %} authority="{{agent.agent_data.display_name.source}}"{%- endif %} {%- if agent.agent_data.display_name.authority_id %} valueURI="{{agent.agent_data.display_name.authority_id}}" {%- endif %}>
@@ -110,10 +121,12 @@
 </name>
 {%- endfor %}
 {%- endif %}
+{%- endif %}
 
 <!-- Arrangement -->
 {%- if arrangement != None %}
-<abstract type="arrangement">{{arrangement.content}}
+{%- for a in arrangement %}
+<abstract type="arrangement">{{a.content}}
   {%- if arrangement_items != None %}
   {%- for item in arrangement_items %}
   <list type="simple">
@@ -122,34 +135,43 @@
   {%- endfor %}
   {%- endif %}
 </abstract>
+{%- endfor %}
 {%- endif %}
 
 <!-- Scope and content -->
+{%- if abstract != None %}
 {%- if abstract|length > 0 %}
 {%- for a in abstract %}
 <abstract>{{a}}</abstract>
 {%- endfor %}
 {%- endif %}
+{%- endif %}
 
 <!-- Conditions governing use -->
+{%- if userestrict != None %}
 {%- if userestrict|length > 0 %}
 {%- for u in userestrict %}
 <accessCondition type="use and reproduction" displayLabel="Collection Use and Reproduction">{{u}}</accessCondition>
 {%- endfor %}
 {%- endif %}
+{%- endif %}
 
 <!-- Conditions governing access -->
+{%- if accessrestrict != None %}
 {%- if accessrestrict|length > 0 %}
 {%- for a in accessrestrict %}
 <accessCondition type="restriction on access" displayLabel="Collection Access">{{a}}</accessCondition>
 {%- endfor %}
 {%- endif %}
+{%- endif %}
 
 <!-- General notes -->
+{%- if general_notes != None %}
 {%- if general_notes|length > 0 %}
 {%- for note in general_notes %}
 <note>{{note.content}}</note>
 {%- endfor %}
+{%- endif %}
 {%- endif %}
 
 <!-- Shelf location -->
