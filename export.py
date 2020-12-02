@@ -55,15 +55,21 @@ if __name__ == '__main__':
 
 	aspace = ASpace()
 
-	# config = configparser.ConfigParser()
-	# config.read('config.ini')
+	with open('config.json') as config_file:
+		try:
+			configs = json.load(config_file)
+		except:
+			logging.error('No config file found')
+			exit(1)
 
-	# repos = config['repos']['repos'].split(',')
-	repo_data = aspace.client.get('/repositories?all_ids=true').json()
-	repos = []
-	for repo in repo_data:
-		repo_id = repo['uri'].split('/')[-1]
-		repos.append(repo_id)
+
+	# repo_data = aspace.client.get('/repositories?all_ids=true').json()
+	# repos = []
+	# for repo in repo_data:
+	# 	repo_id = repo['uri'].split('/')[-1]
+	# 	repos.append(repo_id)
+
+	repos = configs['config']['repos']
 
 	if CACHEFILE is None:
 		EXTRACTED_DATA = get_extract(repos)
@@ -72,6 +78,10 @@ if __name__ == '__main__':
 	else:
 		with open('extract.json', 'r') as infile:
 			EXTRACTED_DATA = json.load(infile)
+
+	# Add repository names and finding aid url to extracted data
+	EXTRACTED_DATA['repositories'] = configs['config']['repositories']
+	EXTRACTED_DATA['url_stem'] = configs['config']['findingaid_url']
 
 	to_export = get_export_list(EXTRACTED_DATA)
 
@@ -82,6 +92,7 @@ if __name__ == '__main__':
 	if os.path.isdir(save_path) != False:
 		for current_record in to_export:
 			do_id = current_record[0]
+			pp(do_id)
 			template_context = {}
 			for field_name, field_recipe in MAPPING.items():
 				try:
@@ -98,9 +109,9 @@ if __name__ == '__main__':
 				if (transform_return_value is None):
 					if ('required' in field_recipe) & (field_recipe['required'] is True):
 						logging.error("Required field '%s' missing in %s. Skipping record." % (field_name, do_id))
-						# continue
+						continue
 					else:
-						logging.warning("Field %s could not be generated for %s" % (field_name, do_id))
+						# logging.warning("Field %s could not be generated for %s" % (field_name, do_id))
 						template_context[field_name] = transform_return_value
 				else:
 					template_context[field_name] = transform_return_value
