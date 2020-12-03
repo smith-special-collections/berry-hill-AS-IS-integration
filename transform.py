@@ -6,15 +6,15 @@ from pprint import pprint as pp
 MAPPING = {
     'title': {                       # The name of the field as will appear in the template context
         'transform_function': 'title', # The name of the function that will generate the field contents
-        'required': False               # If the field doesn't exist, the record can't be made
+        'required': True               # If the field doesn't exist, the record can't be made
     },
     'digital_object_id': {
         'transform_function': 'digital_object_id',
-        'required': False
+        'required': True
     },
     'digital_object_uri': {
         'transform_function': 'digital_object_uri',
-        'required': False
+        'required': True
     },
     'component_uri': {
         'transform_function': 'component_uri',
