@@ -126,7 +126,7 @@
 <!-- Arrangement -->
 {%- if arrangement != None %}
 {%- for a in arrangement %}
-<abstract type="arrangement">{{a.content}}
+<abstract type="arrangement">{{a}}
   {%- if arrangement_items != None %}
   {%- for item in arrangement_items %}
   <list type="simple">
@@ -182,23 +182,23 @@
 {%- endif %}
 
 <!-- Digital object ID -->
-{%- if digital_object_id %}
+{%- if digital_object_id != None %}
 <identifier type="local">{{digital_object_id}}</identifier>
 {%- endif %}
 
 <!-- Digital object URI -->
-{%- if digital_object_uri %}
+{%- if digital_object_uri != None %}
 <identifier type="asdouri">{{digital_object_uri}}</identifier>
 {%- endif %}
 
 <!-- Archival object ID -->
-{%- if archival_object_ref %}
+{%- if archival_object_ref != None %}
 <identifier type="asrefid">{{archival_object_ref}}</identifier>
 {%- endif %}
 
 <!-- Archival object URI -->
-{%- if archival_object_uri %}
-<identifier type="asouri">{{archival_object_uri}}</identifier>
+{%- if component_uri != None %}
+<identifier type="asouri">{{component_uri}}</identifier>
 {%- endif %}
 
 <!-- Resource title -->
