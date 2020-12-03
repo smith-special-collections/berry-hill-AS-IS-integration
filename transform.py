@@ -6,35 +6,35 @@ from pprint import pprint as pp
 MAPPING = {
     'title': {                       # The name of the field as will appear in the template context
         'transform_function': 'title', # The name of the function that will generate the field contents
-        'required': True               # If the field doesn't exist, the record can't be made
+        'required': False               # If the field doesn't exist, the record can't be made
     },
     'digital_object_id': {
         'transform_function': 'digital_object_id',
-        'required': True
+        'required': False
     },
     'digital_object_uri': {
         'transform_function': 'digital_object_uri',
-        'required': True
+        'required': False
     },
-    'archival_object_uri': {
-        'transform_function': 'archival_object_uri',
-        'required': True
+    'component_uri': {
+        'transform_function': 'component_uri',
+        'required': False
     },
     'archival_object_ref': {
         'transform_function': 'archival_object_ref',
-        'required': True
+        'required': False
     },
     'resource_uri': {
         'transform_function': 'resource_uri',
-        'required': True
+        'required': False
     },
     'resource_title': {
         'transform_function': 'resource_title',
-        'required': True
+        'required': False
     },
     'resource_ms_no': {
         'transform_function': 'resource_ms_no',
-        'required': True
+        'required': False
     },
     'subjects': {
         'transform_function': 'subjects_with_genre_forms_removed',
@@ -73,7 +73,7 @@ MAPPING = {
         'required': False
     },
     'arrangement': {
-        'transform_function': 'arrangement',
+        'transform_function': 'arrangement_content',
         'required': False
     },
     'arrangement_items': {
@@ -141,37 +141,77 @@ class Transforms():
         return EXTRACTED_DATA['digital_objects'][do_id]['uri']
 
 
-    def archival_object_uri(self, EXTRACTED_DATA, do_id):
+    def component_uri(self, EXTRACTED_DATA, do_id):
+        component_uri = None
         do = EXTRACTED_DATA['digital_objects'][do_id]
         parent_uri = do['linked_instances'][0]['ref']
         for uri, ao in EXTRACTED_DATA['archival_objects'].items():
             if uri == parent_uri:
-                ao_uri = ao['uri']
-                return ao_uri
+                component_uri = ao['uri']
+        if component_uri == None:
+            component_uri = self._accession_or_resource_parent_uri(EXTRACTED_DATA, do_id)
+        
+        return component_uri
 
     
-    def _archival_object(self, EXTRACTED_DATA, do_id):
-        '''Helper function that returns archival object record from EXTRACTED_DATA'''
-        ao_uri = self.archival_object_uri(EXTRACTED_DATA, do_id)
-        if ao_uri != None:
+    def _component_object(self, EXTRACTED_DATA, do_id):
+        '''Helper function that returns archival object or parent record from EXTRACTED_DATA'''
+        uri = self.component_uri(EXTRACTED_DATA, do_id)
+        parent = None
+        if uri != None:
             # The digital object might not be attached to an archival object
             # Wherever ao_uri != None, this might be the case
-            return deepcopy(EXTRACTED_DATA['archival_objects'][ao_uri])
+            if 'archival_objects' in uri:               
+                parent = deepcopy(EXTRACTED_DATA['archival_objects'][uri])
+            elif 'accessions' in uri:
+                parent = deepcopy(EXTRACTED_DATA['accessions'][uri])
+            elif 'resources' in uri:
+                parent = deepcopy(EXTRACTED_DATA['resources'][uri])
+        
+        return parent
+
+
+    def _accession_or_resource_parent_uri(self, EXTRACTED_DATA, do_id):
+        '''Helper function that checks for digital objects linked to accessions or resources'''
+        do = EXTRACTED_DATA['digital_objects'][do_id]
+        parent_uri = do['linked_instances'][0]['ref']
+        component_uri = None
+        for uri, acc in EXTRACTED_DATA['accessions'].items():
+            if uri == parent_uri:
+                component_uri = acc['uri']
+        if component_uri == None:
+            for uri, r in EXTRACTED_DATA['resources'].items():
+                if uri == parent_uri:
+                    component_uri = r['uri']
+
+        return component_uri      
 
 
     def archival_object_ref(self, EXTRACTED_DATA, do_id):
-        ao = self._archival_object(EXTRACTED_DATA, do_id)
-        if ao != None:
-            ao_ref = ao['ref_id']
-            return ao_ref
+        obj_ref = None
+        obj = self._component_object(EXTRACTED_DATA, do_id)
+        if obj != None:
+            if 'ref_id' in obj.keys():
+                obj_ref = obj['ref_id']
+        
+        return obj_ref
 
-
+    # Possibly make a list
     def resource_uri(self, EXTRACTED_DATA, do_id):
-        ao_uri = self.archival_object_uri(EXTRACTED_DATA, do_id)
-        if ao_uri != None:
-            ao = EXTRACTED_DATA['archival_objects'][ao_uri]
-            resource_uri = ao['resource']['ref']
-            return resource_uri
+        uri = self.component_uri(EXTRACTED_DATA, do_id)
+        resource_uri = None
+        if uri != None:
+            try:
+                ao = EXTRACTED_DATA['archival_objects'][uri]
+                resource_uri = ao['resource']['ref']
+            except KeyError:
+                r = EXTRACTED_DATA['resources'][uri]
+                resource_uri = r['uri']
+            except KeyError:
+                a = EXTRACTED_DATA['accessions'][uri]
+                resource_uri = a['related_resources'][0]['ref']
+        
+        return resource_uri
   
     
     def _resource(self, EXTRACTED_DATA, do_id):
@@ -182,11 +222,15 @@ class Transforms():
 
     
     def resource_title(self, EXTRACTED_DATA, do_id):
+        title = None
         resource = self._resource(EXTRACTED_DATA, do_id)
         if resource != None:
             # There might not be a resource to which the digital object is related
             # Wherever 'resource != None', this is the case
-            return resource['title']
+            title = resource['title']
+            return title
+        else:
+            return None
 
     
     def resource_ms_no(self, EXTRACTED_DATA, do_id):
@@ -194,6 +238,8 @@ class Transforms():
         if resource != None:
             ms_no = resource['id_0'] + ' ' + resource['id_1'] + ' ' + resource['id_2']
             return ms_no
+        else:
+            return None
 
 
     def subjects_with_genre_forms_removed(self, EXTRACTED_DATA, do_id):
@@ -218,11 +264,11 @@ class Transforms():
         '''A helper function to get all the subjects at the archival object level; logic based on rules of inheritance: 
         https://github.com/smith-special-collections/sc-documentation/wiki/Rules-for-description-inheritance-for-digital-object-records'''
         subjects = []
-        ao_uri = self.archival_object_uri(EXTRACTED_DATA, do_id)
-        if ao_uri != None:
-            ao = EXTRACTED_DATA['archival_objects'][ao_uri]
-            if len(ao['subjects']) > 0:
-                for subject in ao['subjects']:
+        obj = self._component_object(EXTRACTED_DATA, do_id)
+        if obj != None:
+            if len(obj['subjects']) > 0:
+                # pp(obj.keys())
+                for subject in obj['subjects']:
                     sub_uri = subject['ref']
                     if EXTRACTED_DATA['subjects'][sub_uri] not in subjects:
                         subjects.append(EXTRACTED_DATA['subjects'][sub_uri])
@@ -262,7 +308,7 @@ class Transforms():
         '''Logic based on rules of inheritance: 
         https://github.com/smith-special-collections/sc-documentation/wiki/Rules-for-description-inheritance-for-digital-object-records'''
         agents = []
-        ao = self._archival_object(EXTRACTED_DATA, do_id)
+        ao = self._component_object(EXTRACTED_DATA, do_id)
         resource = self._resource(EXTRACTED_DATA, do_id)
         if ao != None:
             # Get agents from archival object
@@ -271,8 +317,11 @@ class Transforms():
                     agent_dict = {}
                     agent_dict['role'] = agent['role']
                     agent_uri = agent['ref']
-                    agent_dict['agent_data'] = self.remap_mods_agent_type(deepcopy(EXTRACTED_DATA['agents'][agent_uri]))
-                    agents.append(agent_dict)
+                    try:
+                        agent_dict['agent_data'] = self.remap_mods_agent_type(deepcopy(EXTRACTED_DATA['agents'][agent_uri]))
+                        agents.append(agent_dict)
+                    except KeyError:
+                        pass
         if resource != None:
             # Get agents from resource
             if len(resource['linked_agents']) > 0:
@@ -281,12 +330,13 @@ class Transforms():
                         agent_dict = {}
                         agent_dict['role'] = agent['role']
                         agent_uri = agent['ref']
-                        agent_dict['agent_data'] = self.remap_mods_agent_type(deepcopy(EXTRACTED_DATA['agents'][agent_uri]))
-                        agents.append(agent_dict)
+                        try:
+                            agent_dict['agent_data'] = self.remap_mods_agent_type(deepcopy(EXTRACTED_DATA['agents'][agent_uri]))
+                            agents.append(agent_dict)
+                        except KeyError:
+                            pass
         
         agents = [i for n, i in enumerate(agents) if i not in agents[n + 1:]]
-        pp(agents)
-        pp(len(agents))
         return agents
 
 
@@ -297,7 +347,6 @@ class Transforms():
             for agent in agents:
                 if agent['role'] == 'subject':
                     subject_agents.append(agent)
-        # print(subject_agents)
         if len(subject_agents) == 0:
             return None
         else:
@@ -331,7 +380,7 @@ class Transforms():
 
 
     def extent(self, EXTRACTED_DATA, do_id):
-        ao = self._archival_object(EXTRACTED_DATA, do_id)
+        ao = self._component_object(EXTRACTED_DATA, do_id)
         if ao != None:
             if len(ao['extents']) > 0:
                 return ao['extents'][0]
@@ -357,13 +406,14 @@ class Transforms():
         '''Logic based on rules of inheritance: 
         https://github.com/smith-special-collections/sc-documentation/wiki/Rules-for-description-inheritance-for-digital-object-records'''
         notes_lst = []
-        ao = self._archival_object(EXTRACTED_DATA, do_id)
+        ao = self._component_object(EXTRACTED_DATA, do_id)
         if ao != None:
             if len(ao['notes']) > 0:
                 for note in ao['notes']:
-                     if note['type'] == note_type:
-                        if note['publish'] == True:
-                            notes_lst.append(self.remove_EAD_tags(note['subnotes'][0]['content']))
+                    if 'type' in note.keys():
+                        if note['type'] == note_type:
+                            if note['publish'] == True:
+                                notes_lst.append(self.remove_EAD_tags(note['subnotes'][0]['content']))
         if len(notes_lst) == 0:
             # If there are not any notes at the archival object level, search at the resource level
             resource = self._resource(EXTRACTED_DATA, do_id)
@@ -371,8 +421,9 @@ class Transforms():
                 if len(resource['notes']) > 0:
                     for note in resource['notes']:
                         if note['publish'] == True:
-                            if note['type'] == note_type:
-                                notes_lst.append(self.remove_EAD_tags(note['subnotes'][0]['content']))
+                            if 'type' in note.keys():
+                                if note['type'] == note_type:
+                                    notes_lst.append(self.remove_EAD_tags(note['subnotes'][0]['content']))
         return notes_lst
 
 
@@ -391,15 +442,15 @@ class Transforms():
         return accessrestrict 
 
 
-    def arrangement(self, EXTRACTED_DATA, do_id):
-        '''Returns arrangement note'''
+    def _arrangement(self, EXTRACTED_DATA, do_id):
+        '''Helper function that returns arrangement note'''
         arrangement = []
-        ao = self._archival_object(EXTRACTED_DATA, do_id)
+        ao = self._component_object(EXTRACTED_DATA, do_id)
         if ao != None:
             if len(ao['notes']) > 0:
                 for note in ao['notes']:
                     if note['type'] == 'arrangement':
-                        arrangement.append(note['subnotes']) # Fix this to ensure more than one arrangement note
+                        arrangement.extend(note['subnotes'])
 
         # Creates a dictionary of components from the arrangement note if there is one that is then passed to self.arrangement_items
         if len(arrangement) > 0:
@@ -407,10 +458,15 @@ class Transforms():
             arrangement_dict['content'] = []
             arrangement_dict['items'] = []
             for a in arrangement:
-                arrangement_dict['content'].append(a['content'])
+                try:
+                    if a['content'] not in arrangement_dict['content']:
+                        arrangement_dict['content'].append(a['content'])
+                except KeyError:
+                    pass
             try:
                 for item in a['items']:
-                    arrangement_dict['items'].append(item)
+                    if item not in arrangement_dict['items']:
+                        arrangement_dict['items'].append(item)
             except KeyError:
                 pass
             
@@ -420,18 +476,29 @@ class Transforms():
             return None
 
 
+    def arrangement_content(self, EXTRACTED_DATA, do_id):
+        arrangement = self._arrangement(EXTRACTED_DATA, do_id)
+        if arrangement != None:
+            if isinstance(arrangement, dict):
+                if len(arrangement['content']) > 0:
+                    return arrangement['content']
+                else:
+                    return None
+
+
     def arrangement_items(self, EXTRACTED_DATA, do_id):
-        arrangement = self.arrangement(EXTRACTED_DATA, do_id)
-        if isinstance(arrangement, dict):
-            if len(arrangement['items']) > 0:
-                return arrangement['items']
-            else:
-                return None
+        arrangement = self._arrangement(EXTRACTED_DATA, do_id)
+        if arrangement != None:
+            if isinstance(arrangement, dict):
+                if len(arrangement['items']) > 0:
+                    return arrangement['items']
+                else:
+                    return None
 
 
     def general_notes(self, EXTRACTED_DATA, do_id):
         general_notes = []
-        ao = self._archival_object(EXTRACTED_DATA, do_id)
+        ao = self._component_object(EXTRACTED_DATA, do_id)
         if ao != None:
             if len(ao['notes']) > 0:
                 for note in ao['notes']:
@@ -450,7 +517,7 @@ class Transforms():
         '''Logic based on rules of inheritance: 
         https://github.com/smith-special-collections/sc-documentation/wiki/Rules-for-description-inheritance-for-digital-object-records'''
         langs = []
-        ao = self._archival_object(EXTRACTED_DATA, do_id)
+        ao = self._component_object(EXTRACTED_DATA, do_id)
         if ao != None:
             if len(ao['lang_materials']) > 0:
                 for lang in ao['lang_materials']:
@@ -482,7 +549,7 @@ class Transforms():
         '''Logic based on rules of inheritance: 
         https://github.com/smith-special-collections/sc-documentation/wiki/Rules-for-description-inheritance-for-digital-object-records'''
         dates = None
-        ao = self._archival_object(EXTRACTED_DATA, do_id)
+        ao = self._component_object(EXTRACTED_DATA, do_id)
         if ao != None:
             if len(ao['dates']) > 0:
                 # Dates returned as strings
@@ -517,7 +584,7 @@ class Transforms():
 
 
     def archival_object_location(self, EXTRACTED_DATA, do_id):
-        ao_uri = self.archival_object_uri(EXTRACTED_DATA, do_id)
+        ao_uri = self.component_uri(EXTRACTED_DATA, do_id)
         if ao_uri != None:
             finding_aid_url = 'https://findingaids.smith.edu' + ao_uri
             return finding_aid_url
@@ -526,7 +593,7 @@ class Transforms():
 
 
     def folder_number(self, EXTRACTED_DATA, do_id):
-        ao = self._archival_object(EXTRACTED_DATA, do_id)
+        ao = self._component_object(EXTRACTED_DATA, do_id)
         if ao != None:
             try:
                 fol = ao['instances'][0]['sub_container']['type_2'].capitalize()
@@ -540,7 +607,7 @@ class Transforms():
 
     def top_container(self, EXTRACTED_DATA, do_id):
         top_container_string = None
-        ao = self._archival_object(EXTRACTED_DATA, do_id)
+        ao = self._component_object(EXTRACTED_DATA, do_id)
         if ao != None:
             if len(ao['instances']) > 0:
                 for instance in ao['instances']:
@@ -554,10 +621,11 @@ class Transforms():
     def excerpts(self, EXTRACTED_DATA, do_id):
         '''Function to determine if (Excerpts) should be appended to title''' 
         processinfo = self.notes(EXTRACTED_DATA, do_id, 'processinfo')
+        excerpts = None
         if processinfo != None:
             for p in processinfo:
                 if 'select material' in p:
                     excerpts = ' (Excerpts)'
-                    return excerpts
+        return excerpts
 
 
