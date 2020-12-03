@@ -62,13 +62,14 @@ if __name__ == '__main__':
 			logging.error('No config file found')
 			exit(1)
 
-
+	## Uncomment when testing:
 	# repo_data = aspace.client.get('/repositories?all_ids=true').json()
 	# repos = []
 	# for repo in repo_data:
 	# 	repo_id = repo['uri'].split('/')[-1]
 	# 	repos.append(repo_id)
 
+	## Comment out this line when testing:
 	repos = configs['config']['repos']
 
 	if CACHEFILE is None:
@@ -94,6 +95,7 @@ if __name__ == '__main__':
 			do_id = current_record[0]
 			pp(do_id)
 			template_context = {}
+			record_valid = True
 			for field_name, field_recipe in MAPPING.items():
 				try:
 					transform_method = getattr(transforms, field_recipe['transform_function'])
@@ -109,24 +111,25 @@ if __name__ == '__main__':
 				if (transform_return_value is None):
 					if ('required' in field_recipe) & (field_recipe['required'] is True):
 						logging.error("Required field '%s' missing in %s. Skipping record." % (field_name, do_id))
-						continue
+						record_valid = False
 					else:
-						# logging.warning("Field %s could not be generated for %s" % (field_name, do_id))
+						logging.warning("Information not found in %s field for digital object %s" % (field_name, do_id))
 						template_context[field_name] = transform_return_value
 				else:
 					template_context[field_name] = transform_return_value
+						
+			if record_valid == True:
+				logging.info('Rendering MODS record for %s' % current_record[0])
+				xml = render_record(template_context)
+				handle = current_record[1]
+				filename = os.path.join(save_path, handle)
 
-			logging.info('Rendering MODS record for %s' % current_record[0])
-			xml = render_record(template_context)
-			handle = current_record[1]
-			filename = os.path.join(save_path, handle)
-
-			try:
-				with open(filename, "w") as fh:
-					logging.info('Writing %s' % filename)
-					fh.write(xml)
-			except Exception as e:
-				logging.error('File could not be written for %s' % (handle))
+				try:
+					with open(filename, "w") as fh:
+						logging.info('Writing %s' % filename)
+						fh.write(xml)
+				except Exception as e:
+					logging.error('File could not be written for %s' % (handle))
 
 		logging.info('All files written.')        
 
