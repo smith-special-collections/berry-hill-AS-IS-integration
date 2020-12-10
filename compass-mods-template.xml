@@ -17,9 +17,9 @@
 {%- for date in dates %}
 <originInfo>
 {%- if date.begin %}
-  <dateCreated keyDate="yes" encoding="iso8601" {%- if date.certainty %} qualifier={{date.certainty}} {%- endif %} point="start">{{date.begin}}</dateCreated>
+  <dateCreated keyDate="yes" encoding="iso8601" {%- if date.certainty %} qualifier="{{date.certainty}}" {%- endif %} point="start">{{date.begin}}</dateCreated>
 {%- if date.end %}
-  <dateCreated encoding="iso8601" {%- if date.certainty %} qualifier={{date.certainty}} {%- endif %} point="end">-{{date.end}}</dateCreated>
+  <dateCreated encoding="iso8601" {%- if date.certainty %} qualifier="{{date.certainty}}" {%- endif %} point="end">-{{date.end}}</dateCreated>
 {%- endif %}
 {%- else %}
 <dateCreated keyDate="yes" encoding="iso8601">{{date.expression}}</dateCreated>
@@ -74,7 +74,14 @@
         <geographic>{{term.term.rstrip()}}</geographic>
       {%- elif term.term_type == 'topical' %}
         <topic>{{term.term.rstrip()}}</topic>
+      {%- elif term.term_type == 'temporal' %}
+      	<temporal>{{term.term.rstrip()}}</temporal>
+      {%- elif term.term_type == 'cultural_context' %}
+      	<topic>{{term.term.rstrip()}}</topic>
+      {%- elif term.term_type == 'uniform_title' %}
+      	<titleInfo>{{term.term.rstrip()}}</titleInfo>
       {%- else %}
+      	<topic>{{term.term.rstrip()}}</topic>
       {%- endif %}
     {%- endfor %}
   {%- endif %}
