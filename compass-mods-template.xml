@@ -90,44 +90,24 @@
 {%- endif %}
 {%- endif %}
 
-<!-- Agents as subjects -->
-{%- if subject_agents != None %}
-{%- if subject_agents|length > 0 %}
-{%- for agent in subject_agents %}
+
+<!-- Agents -->
+{%- if agents != None %}
+{%- for agent in agents %}
+{%- if agent.role == 'subject' %}
 <subject{%- if agent.agent_data.display_name.source %} authority="{{agent.agent_data.display_name.source}}"{%- endif %} {%- if agent.agent_data.display_name.authority_id %} valueURI="{{agent.agent_data.display_name.authority_id}}" {%- endif %}>
-  <name type="{{agent.agent_data.jsonmodel_type}}"><namePart>{{agent.agent_data.title|e}}</namePart></name>
+<name type="{{agent.agent_data.jsonmodel_type}}"><namePart>{{agent.agent_data.title|e}}</namePart></name>
 </subject>
-{%- endfor %}
-{%- endif %}
-{%- endif %}
-
-<!-- Agents as donors or creators -->
-{%- if creator_agents != None %}
-{%- if creator_agents|length > 0 %}
-{%- for agent in creator_agents %}
+{%- elif agent.role != 'subject' %}
 <name type="{{agent.agent_data.jsonmodel_type}}" {%- if agent.agent_data.display_name.source %} authority="{{agent.agent_data.display_name.source}}"{%- endif %} {%- if agent.agent_data.display_name.authority_id %} valueURI="{{agent.agent_data.display_name.authority_id}}" {%- endif %}>
-  <role>
-    <roleTerm type="text" authority="marcrelator">creator</roleTerm>
-    <roleTerm type="code" authority="marcrelator">cre</roleTerm>
-  </role>
-    <namePart>{{agent.agent_data.title|e}}</namePart>
+<role>
+<roleTerm type="text" authority="marcrelator">{{agent.role_value}}</roleTerm>
+<roleTerm type="code" authority="marcrelator">{{agent.role}}</roleTerm>
+</role>
+<namePart>{{agent.agent_data.title|e}}</namePart>
 </name>
+{%- endif %}
 {%- endfor %}
-{%- endif %}
-{%- endif %}
-
-{%- if donor_agents != None %}
-{%- if donor_agents|length > 0 %}
-{%- for agent in donor_agents %}
-<name type="{{agent.agent_data.jsonmodel_type}}"{%- if agent.agent_data.display_name.source %} authority="{{agent.agent_data.display_name.source}}"{%- endif %} {%- if agent.agent_data.display_name.authority_id %} valueURI="{{agent.agent_data.display_name.authority_id}}" {%- endif %}>
-  <role>
-    <roleTerm type="text" authority="marcrelator">donor</roleTerm>
-    <roleTerm type="code" authority="marcrelator">dnr</roleTerm>
-  </role>
-    <namePart>{{agent.agent_data.title|e}}</namePart>
-</name>
-{%- endfor %}
-{%- endif %}
 {%- endif %}
 
 <!-- Arrangement -->
