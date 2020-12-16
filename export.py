@@ -83,6 +83,17 @@ if __name__ == '__main__':
 	# Add repository names and finding aid url to extracted data
 	EXTRACTED_DATA['repositories'] = configs['config']['repositories']
 	EXTRACTED_DATA['url_stem'] = configs['config']['findingaid_url']
+	EXTRACTED_DATA['relator_file'] = configs['config']['relator_file']
+
+	# Adding Library of Congress relator data for agent output
+	with open(EXTRACTED_DATA['relator_file']) as json_file:
+		try:
+			relators = json.load(json_file)
+		except:
+			relators = None
+
+	EXTRACTED_DATA['relators'] = relators
+
 
 	to_export = get_export_list(EXTRACTED_DATA)
 
@@ -93,7 +104,7 @@ if __name__ == '__main__':
 	if os.path.isdir(save_path) != False:
 		for current_record in to_export:
 			do_id = current_record[0]
-			pp(do_id)
+			# pp(do_id)
 			template_context = {}
 			record_valid = True
 			for field_name, field_recipe in MAPPING.items():
@@ -117,7 +128,7 @@ if __name__ == '__main__':
 						template_context[field_name] = transform_return_value
 				else:
 					template_context[field_name] = transform_return_value
-						
+
 			if record_valid == True:
 				logging.info('Rendering MODS record for %s' % current_record[0])
 				xml = render_record(template_context)
