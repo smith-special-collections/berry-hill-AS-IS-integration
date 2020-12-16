@@ -44,16 +44,8 @@ MAPPING = {
         'transform_function': 'genre_subjects',
         'required': False
     },
-    'creator_agents': {
-        'transform_function': 'creator_agents',
-        'required': False
-    },
-    'donor_agents': {
-        'transform_function': 'donor_agents',
-        'required': False
-    },
-    'subject_agents': {
-        'transform_function': 'subject_agents',
+    'agents': {
+        'transform_function': 'agents',
         'required': False
     },
     'extent': {
@@ -246,11 +238,12 @@ class Transforms():
         '''F to remove genre subjects from subject data so they do not get templated incorrectly'''
         subjects = self._subjects(EXTRACTED_DATA, do_id)
         cleaned_subjects = []
+        genre_forms = []
         if len(subjects) > 0:
             for sub in subjects:
                 for term in sub['terms']:
                     if term['term_type'] == 'genre_form':
-                        continue
+                        genre_forms.append(sub)
                     else:
                         if sub not in cleaned_subjects:
                             cleaned_subjects.append(sub)
@@ -304,10 +297,35 @@ class Transforms():
         return agent_data
 
 
+    def _get_relator_id(self, relator):
+        relator_id = relator['@id'].split('/')[-1]
+        return relator_id
+
+
+    def _get_relator_value(self, relator):
+        try:
+            relator_value = relator['http://www.loc.gov/mads/rdf/v1#authoritativeLabel'][0]['@value']
+            return relator_value.lower()
+        except KeyError:
+            return None 
+
+
+    def _make_relator_dict(self, EXTRACTED_DATA, do_id):
+        '''Helper function that utilizes relator list from Library of Congress to parse correct relator ids and values'''
+
+        relator_dict = {}
+        if EXTRACTED_DATA['relators'] != None:
+            for relator in EXTRACTED_DATA['relators']:
+                relator_dict[self._get_relator_id(relator)] = self._get_relator_value(relator)
+
+        return relator_dict 
+
+
     def agents(self, EXTRACTED_DATA, do_id):
         '''Logic based on rules of inheritance: 
         https://github.com/smith-special-collections/sc-documentation/wiki/Rules-for-description-inheritance-for-digital-object-records'''
         agents = []
+        relator_dict = self._make_relator_dict(EXTRACTED_DATA, do_id)
         ao = self._component_object(EXTRACTED_DATA, do_id)
         resource = self._resource(EXTRACTED_DATA, do_id)
         if ao != None:
@@ -315,7 +333,14 @@ class Transforms():
             if len(ao['linked_agents']) > 0:
                 for agent in ao['linked_agents']:
                     agent_dict = {}
-                    agent_dict['role'] = agent['role']
+                    agent_dict['role_value'] = ''
+                    try:
+                        agent_dict['role'] = agent['relator']
+                    except KeyError:
+                        if agent['role'] == 'source':
+                            agent_dict['role'] = 'donor'
+                        else:
+                            agent_dict['role'] = agent['role']
                     agent_uri = agent['ref']
                     try:
                         agent_dict['agent_data'] = self.remap_mods_agent_type(deepcopy(EXTRACTED_DATA['agents'][agent_uri]))
@@ -328,7 +353,14 @@ class Transforms():
                 for agent in resource['linked_agents']:
                     if agent['role'] != 'subject':
                         agent_dict = {}
-                        agent_dict['role'] = agent['role']
+                        agent_dict['role_value'] = ''
+                        try:
+                            agent_dict['role'] = agent['relator']
+                        except KeyError:
+                            if agent['role'] == 'source':
+                                agent_dict['role'] = 'donor'
+                            else:
+                                agent_dict['role'] = agent['role']
                         agent_uri = agent['ref']
                         try:
                             agent_dict['agent_data'] = self.remap_mods_agent_type(deepcopy(EXTRACTED_DATA['agents'][agent_uri]))
@@ -336,47 +368,16 @@ class Transforms():
                         except KeyError:
                             pass
         
+        for k, v in relator_dict.items():
+            for agent in agents:
+                if k == agent['role']:
+                    agent['role_value'] = v
+                elif v == agent['role']:
+                    agent['role_value'] = v
+                    agent['role'] = k
+
         agents = [i for n, i in enumerate(agents) if i not in agents[n + 1:]]
         return agents
-
-
-    def subject_agents(self, EXTRACTED_DATA, do_id):
-        subject_agents = []
-        agents = self.agents(EXTRACTED_DATA, do_id)
-        if len(agents) > 0:
-            for agent in agents:
-                if agent['role'] == 'subject':
-                    subject_agents.append(agent)
-        if len(subject_agents) == 0:
-            return None
-        else:
-            return subject_agents
-
-
-    def donor_agents(self, EXTRACTED_DATA, do_id):
-        donor_agents = []
-        agents = self.agents(EXTRACTED_DATA, do_id)
-        if len(agents) > 0:
-            for agent in agents:
-                if agent['role'] == 'source':
-                    donor_agents.append(agent)
-        if len(donor_agents) == 0:
-            return None
-        else:
-            return donor_agents
-
-
-    def creator_agents(self, EXTRACTED_DATA, do_id):
-        creator_agents = []
-        agents = self.agents(EXTRACTED_DATA, do_id)
-        if len(agents) > 0:
-            for agent in agents:
-                if agent['role'] == 'creator':
-                    creator_agents.append(agent)
-        if len(creator_agents) == 0:
-            return None
-        else:
-            return creator_agents
 
 
     def extent(self, EXTRACTED_DATA, do_id):
