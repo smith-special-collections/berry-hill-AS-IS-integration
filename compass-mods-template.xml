@@ -134,6 +134,15 @@
 {%- endif %}
 {%- endif %}
 
+<!-- Physical description -->
+{%- if physdesc != None %}
+{%- if physdesc|length > 0 %}
+{%- for p in physdesc %}
+<physicalDescription><note>{{p}}</note></physicalDescription>
+{%- endfor %}
+{%- endif %}
+{%- endif %}
+
 <!-- Conditions governing use -->
 {%- if userestrict != None %}
 {%- if userestrict|length > 0 %}
