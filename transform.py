@@ -64,6 +64,10 @@ MAPPING = {
         'transform_function': 'accessrestrict',
         'required': False
     },
+    'physdesc': {
+        'transform_function': 'physdesc',
+        'required': False,
+    },
     'arrangement': {
         'transform_function': 'arrangement_content',
         'required': False
@@ -414,7 +418,10 @@ class Transforms():
                     if 'type' in note.keys():
                         if note['type'] == note_type:
                             if note['publish'] == True:
-                                notes_lst.append(self.remove_EAD_tags(note['subnotes'][0]['content']))
+                                try:
+                                    notes_lst.append(self.remove_EAD_tags(note['subnotes'][0]['content']))
+                                except KeyError:
+                                    notes_lst.append(self.remove_EAD_tags(note['content']))
         if len(notes_lst) == 0:
             # If there are not any notes at the archival object level, search at the resource level
             resource = self._resource(EXTRACTED_DATA, do_id)
@@ -424,7 +431,10 @@ class Transforms():
                         if note['publish'] == True:
                             if 'type' in note.keys():
                                 if note['type'] == note_type:
-                                    notes_lst.append(self.remove_EAD_tags(note['subnotes'][0]['content']))
+                                    try:
+                                        notes_lst.append(self.remove_EAD_tags(note['subnotes'][0]['content']))
+                                    except KeyError:
+                                        notes_lst.append(self.remove_EAD_tags(note['content']))
         return notes_lst
 
 
@@ -440,9 +450,14 @@ class Transforms():
 
     def accessrestrict(self, EXTRACTED_DATA, do_id):
         accessrestrict = self.notes(EXTRACTED_DATA, do_id, 'accessrestrict')
-        return accessrestrict 
+        return accessrestrict
 
 
+    def physdesc(self, EXTRACTED_DATA, do_id):
+        physdesc = self.notes(EXTRACTED_DATA, do_id, 'physdesc')
+        return physdesc
+
+    
     def _arrangement(self, EXTRACTED_DATA, do_id):
         '''Helper function that returns arrangement note'''
         arrangement = []
