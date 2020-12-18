@@ -111,6 +111,10 @@ MAPPING = {
     'excerpts': {
         'transform_function': 'excerpts',
         'required': False
+    },
+    'series': {
+        'transform_function': '_series',
+        'required': False
     }
 }
 
@@ -165,6 +169,18 @@ class Transforms():
                 parent = deepcopy(EXTRACTED_DATA['resources'][uri])
         
         return parent
+
+
+    def _series(self, EXTRACTED_DATA, do_id):
+        '''Helper function to get series if there is one from EXTRACTED_DATA'''
+        component_object = self._component_object(EXTRACTED_DATA, do_id)
+        if 'archival_objects' in component_object['uri']:
+            if 'parent' in component_object.keys():
+                try:
+                    series = EXTRACTED_DATA['series'][component_object['parent']['ref']]
+                    return series
+                except KeyError:
+                    return None
 
 
     def _accession_or_resource_parent_uri(self, EXTRACTED_DATA, do_id):
@@ -422,6 +438,20 @@ class Transforms():
                                     notes_lst.append(self.remove_EAD_tags(note['subnotes'][0]['content']))
                                 except KeyError:
                                     notes_lst.append(self.remove_EAD_tags(note['content']))
+        
+        if len(notes_lst) == 0:
+            series = self._series(EXTRACTED_DATA, do_id)
+            if series != None:
+                if len(series['notes']) > 0:
+                    for note in series['notes']:
+                        if note['publish'] == True:
+                            if 'type' in note.keys():
+                                if note['type'] == note_type:
+                                    try:
+                                        notes_lst.append(self.remove_EAD_tags(note['subnotes'][0]['content']))
+                                    except KeyError:
+                                        notes_lst.append(self.remove_EAD_tags(note['content']))
+
         if len(notes_lst) == 0:
             # If there are not any notes at the archival object level, search at the resource level
             resource = self._resource(EXTRACTED_DATA, do_id)
@@ -435,6 +465,8 @@ class Transforms():
                                         notes_lst.append(self.remove_EAD_tags(note['subnotes'][0]['content']))
                                     except KeyError:
                                         notes_lst.append(self.remove_EAD_tags(note['content']))
+
+        
         return notes_lst
 
 

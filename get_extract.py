@@ -37,6 +37,7 @@ def init_data_dict():
 	data_dict = {
 		'digital_objects': {},
 		'archival_objects': {},
+		'series': {},
 		'accessions': {},
 		'resources': {},
 		'subjects': {},
@@ -52,6 +53,10 @@ def get_digital_objects(repo):
 	dos = r.digital_objects()
 	digital_objects = {}
 	for do in dos:
+		if 'user_defined' in do.json().keys():
+			if do.json()['user_defined']['boolean_1'] == True:
+				continue
+
 		for file_version in do.json()['file_versions']:
 			if 'compass' in file_version['file_uri']:
 				# If there's more than one file version, don't add the DO again.
@@ -91,6 +96,26 @@ def get_parent_objects(data_dict):
 			archival_objects = aspace.client.get(f'/repositories/{k}/archival_objects?id_set={chunk}')
 			for archival_object_data in archival_objects.json():
 				data_dict['archival_objects'][archival_object_data['uri']] = archival_object_data
+
+	return data_dict
+
+
+def get_series(data_dict):
+	all_series_uris = []
+	for _, ao in data_dict['archival_objects'].items():
+		if 'parent' in ao.keys():
+			if 'archival_objects' in ao['parent']['ref']:
+				if not ao['parent']['ref'] in all_series_uris:
+					all_series_uris.append(ao['parent']['ref'])
+
+	series_grouped_by_repo = group_uris(all_series_uris)
+	for k, v in series_grouped_by_repo.items():
+		chunks = chunk_ids(v)
+		for chunk in chunks:
+			records = aspace.client.get(f'/repositories/{k}/archival_objects?id_set={chunk}')
+			for record_data in records.json():
+				if record_data['level'] == 'series':
+					data_dict['series'][record_data['uri']] = record_data
 
 	return data_dict
 
@@ -155,6 +180,19 @@ def get_subjects(data_dict):
 				if not subject['ref'] in subject_uris:
 					subject_uris.append(subject['ref'].split('/')[-1])
 
+	for _, r in data_dict['resources'].items():
+		if len(r['subjects']) > 0:
+			for subject in r['subjects']:
+				if not subject['ref'] in subject_uris:
+					subject_uris.append(subject['ref'].split('/')[-1])
+
+	for _, a in data_dict['accessions'].items():
+		if len(a['subjects']) > 0:
+			for subject in a['subjects']:
+				if not subject['ref'] in subject_uris:
+					subject_uris.append(subject['ref'].split('/')[-1])
+
+
 	chunks = chunk_ids(subject_uris)
 	for chunk in chunks:
 		subjects = aspace.client.get(f'/subjects?id_set={chunk}')
@@ -196,6 +234,7 @@ def get_extract(list_of_repos):
 	data_dict = init_data_dict()
 	data_dict = get_digital_objects_by_repo(list_of_repos, data_dict)
 	data_dict = get_parent_objects(data_dict)
+	data_dict = get_series(data_dict)
 	data_dict = get_resources(data_dict)
 	data_dict = get_agents(data_dict)
 	data_dict = get_subjects(data_dict)
