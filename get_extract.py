@@ -37,6 +37,7 @@ def init_data_dict():
 	data_dict = {
 		'digital_objects': {},
 		'archival_objects': {},
+		'subseries': {},
 		'series': {},
 		'accessions': {},
 		'resources': {},
@@ -100,6 +101,26 @@ def get_parent_objects(data_dict):
 	return data_dict
 
 
+def get_subseries(data_dict):
+	all_subseries_uris = []
+	for _, ao in data_dict['archival_objects'].items():
+		if 'parent' in ao.keys():
+			if 'archival_objects' in ao['parent']['ref']:
+				if not ao['parent']['ref'] in all_subseries_uris:
+					all_subseries_uris.append(ao['parent']['ref'])
+
+	subseries_grouped_by_repo = group_uris(all_subseries_uris)
+	for k, v in subseries_grouped_by_repo.items():
+		chunks = chunk_ids(v)
+		for chunk in chunks:
+			records = aspace.client.get(f'/repositories/{k}/archival_objects?id_set={chunk}')
+			for record_data in records.json():
+				if record_data['level'] == 'subseries':
+					data_dict['subseries'][record_data['uri']] = record_data
+
+	return data_dict
+
+
 def get_series(data_dict):
 	all_series_uris = []
 	for _, ao in data_dict['archival_objects'].items():
@@ -107,6 +128,13 @@ def get_series(data_dict):
 			if 'archival_objects' in ao['parent']['ref']:
 				if not ao['parent']['ref'] in all_series_uris:
 					all_series_uris.append(ao['parent']['ref'])
+
+	if len(data_dict['subseries']) != 0: 
+		for _, ss in data_dict['subseries'].items():
+			if 'parent' in ss.keys():
+				if 'archival_objects' in ss['parent']['ref']:
+					if not ss['parent']['ref'] in all_series_uris:
+						all_series_uris.append(ss['parent']['ref'])
 
 	series_grouped_by_repo = group_uris(all_series_uris)
 	for k, v in series_grouped_by_repo.items():
@@ -234,6 +262,7 @@ def get_extract(list_of_repos):
 	data_dict = init_data_dict()
 	data_dict = get_digital_objects_by_repo(list_of_repos, data_dict)
 	data_dict = get_parent_objects(data_dict)
+	data_dict = get_subseries(data_dict)
 	data_dict = get_series(data_dict)
 	data_dict = get_resources(data_dict)
 	data_dict = get_agents(data_dict)

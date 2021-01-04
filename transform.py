@@ -111,10 +111,6 @@ MAPPING = {
     'excerpts': {
         'transform_function': 'excerpts',
         'required': False
-    },
-    'series': {
-        'transform_function': '_series',
-        'required': False
     }
 }
 
@@ -171,6 +167,18 @@ class Transforms():
         return parent
 
 
+    def _subseries(self, EXTRACTED_DATA, do_id):
+        '''Helper function to get subseries if there is one from EXTRACTED_Data'''
+        component_object = self._component_object(EXTRACTED_DATA, do_id)
+        if 'archival_objects' in component_object['uri']:
+            if 'parent' in component_object.keys():
+                try:
+                    subseries = EXTRACTED_DATA['subseries'][component_object['parent']['ref']]
+                    return subseries
+                except KeyError:
+                    return None
+
+
     def _series(self, EXTRACTED_DATA, do_id):
         '''Helper function to get series if there is one from EXTRACTED_DATA'''
         component_object = self._component_object(EXTRACTED_DATA, do_id)
@@ -180,7 +188,16 @@ class Transforms():
                     series = EXTRACTED_DATA['series'][component_object['parent']['ref']]
                     return series
                 except KeyError:
-                    return None
+                    try:
+                        subseries = self._subseries(EXTRACTED_DATA, do_id)
+                        if 'parent' in subseries.keys():
+                            try:
+                                series = EXTRACTED_DATA['series'][subseries['parent']['ref']]
+                                return series
+                            except KeyError:
+                                return None
+                    except KeyError:
+                        return None
 
 
     def _accession_or_resource_parent_uri(self, EXTRACTED_DATA, do_id):
@@ -429,6 +446,18 @@ class Transforms():
         notes_lst = []
         ao = self._component_object(EXTRACTED_DATA, do_id)
         if ao != None:
+            ao_title = ao['title']
+        subseries = self._subseries(EXTRACTED_DATA, do_id)
+        if subseries != None:
+            subseries_title = subseries['title']
+        series = self._series(EXTRACTED_DATA, do_id)
+        if series != None:
+            series_title = series['title']
+        resource = self._resource(EXTRACTED_DATA, do_id)
+        if resource != None:
+            resource_title = resource['title']
+
+        if ao != None:
             if len(ao['notes']) > 0:
                 for note in ao['notes']:
                     if 'type' in note.keys():
@@ -439,34 +468,66 @@ class Transforms():
                                 except KeyError:
                                     notes_lst.append(self.remove_EAD_tags(note['content']))
         
+        # Check for subseries
         if len(notes_lst) == 0:
-            series = self._series(EXTRACTED_DATA, do_id)
+            if subseries != None:
+                if len(subseries['notes']) > 0:
+                    for note in subseries['notes']:
+                        if note['publish'] == True:
+                            if 'type' in note.keys():
+                                if note['type'] == note_type:
+                                    if note_type == 'scopecontent':
+                                        try:
+                                            context_str = f'This material can be found in the {resource_title}, {series_title}, {subseries_title}, {ao_title}.'
+                                        except:
+                                            context_str = ''
+                                    else:
+                                        context_str = ''
+                                    try:
+                                        notes_lst.append(self.remove_EAD_tags(note['subnotes'][0]['content']) + ' ' + context_str)
+                                    except KeyError:
+                                        notes_lst.append(self.remove_EAD_tags(note['content']) + ' ' + context_str)
+
+        if len(notes_lst) == 0:
             if series != None:
                 if len(series['notes']) > 0:
                     for note in series['notes']:
                         if note['publish'] == True:
                             if 'type' in note.keys():
                                 if note['type'] == note_type:
+                                    if note_type == 'scopecontent':
+                                        try:
+                                            context_str = f'This material can be found in the {resource_title}, {series_title}, {ao_title}.'
+                                        except:
+                                            context_str = ''
+                                    else:
+                                        context_str = ''
                                     try:
-                                        notes_lst.append(self.remove_EAD_tags(note['subnotes'][0]['content']))
+                                        notes_lst.append(self.remove_EAD_tags(note['subnotes'][0]['content']) + ' ' + context_str)
                                     except KeyError:
-                                        notes_lst.append(self.remove_EAD_tags(note['content']))
+                                        notes_lst.append(self.remove_EAD_tags(note['content']) + ' ' + context_str)
 
         if len(notes_lst) == 0:
-            # If there are not any notes at the archival object level, search at the resource level
-            resource = self._resource(EXTRACTED_DATA, do_id)
+            # If there are not any notes at the archival object level or series level, search at the resource level
             if resource != None:
                 if len(resource['notes']) > 0:
                     for note in resource['notes']:
                         if note['publish'] == True:
                             if 'type' in note.keys():
                                 if note['type'] == note_type:
+                                    if note_type == 'scopecontent':
+                                        try:
+                                            context_str = f'This material can be found in the {resource_title}, {ao_title}.'
+                                        except:
+                                            context_str = ''
+                                    else:
+                                        context_str = ''
                                     try:
-                                        notes_lst.append(self.remove_EAD_tags(note['subnotes'][0]['content']))
+                                        notes_lst.append(self.remove_EAD_tags(note['subnotes'][0]['content']) + ' ' + context_str)
                                     except KeyError:
-                                        notes_lst.append(self.remove_EAD_tags(note['content']))
+                                        notes_lst.append(self.remove_EAD_tags(note['content']) + ' ' + context_str)
 
-        
+
         return notes_lst
 
 
