@@ -15,20 +15,20 @@
 <!-- Date -->
 {%- if dates != None %}
 {%- for date in dates %}
+{%- if date.expression != 'undated' %}
 <originInfo>
 {%- if date.begin %}
-{%- if date.expression != 'undated' %}
 <dateCreated keyDate="yes" encoding="iso8601" {%- if date.certainty %} qualifier="{{date.certainty}}" {%- endif %} {%- if date.date_type != 'single' %} point="start" {%- endif %}>{{date.begin}}</dateCreated>
-{%- endif %}
-{%- endif %}
 {%- if date.end %}
 {%- if date.end != date.begin %}
-{%- if date.expression != 'undated' %}
   <dateCreated encoding="iso8601" {%- if date.certainty %} qualifier="{{date.certainty}}" {%- endif %} point="end">{{date.end}}</dateCreated>
 {%- endif %}
 {%- endif %}
-{%- endif %}
+{%- else %}
+<dateCreated encoding="iso8601">{{date.expression}}</dateCreated>
 </originInfo>
+{%- endif %}
+{%- endif %}
 {%- endfor %}
 {%- endif %}
 
