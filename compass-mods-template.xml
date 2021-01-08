@@ -8,7 +8,7 @@
 <!-- Title -->
 {%- if title %}
 <titleInfo>
-  <title>{{title.rstrip()|e}} {%- if excerpts != None %}{{excerpts}}{%- endif %}</title>
+  <title>{{title.rstrip()}} {%- if excerpts != None %}{{excerpts}}{%- endif %}</title>
 </titleInfo>
 {%- endif %}
 
@@ -17,11 +17,15 @@
 {%- for date in dates %}
 <originInfo>
 {%- if date.begin %}
-<dateCreated keyDate="yes" {%- if date.expression != 'undated' %} encoding="iso8601" {%- endif %} {%- if date.certainty %} qualifier="{{date.certainty}}" {%- endif %} {%- if date.date_type != 'single' %} point="start" {%- endif %}>{{date.begin}}</dateCreated>
+{%- if date.expression != 'undated' %}
+<dateCreated keyDate="yes" encoding="iso8601" {%- if date.certainty %} qualifier="{{date.certainty}}" {%- endif %} {%- if date.date_type != 'single' %} point="start" {%- endif %}>{{date.begin}}</dateCreated>
+{%- endif %}
 {%- endif %}
 {%- if date.end %}
 {%- if date.end != date.begin %}
-  <dateCreated {%- if date.expression != 'undated' %} encoding="iso8601" {%- endif %} {%- if date.certainty %} qualifier="{{date.certainty}}" {%- endif %} point="end">{{date.end}}</dateCreated>
+{%- if date.expression != 'undated' %}
+  <dateCreated encoding="iso8601" {%- if date.certainty %} qualifier="{{date.certainty}}" {%- endif %} point="end">{{date.end}}</dateCreated>
+{%- endif %}
 {%- endif %}
 {%- endif %}
 </originInfo>

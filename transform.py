@@ -125,8 +125,7 @@ class Transforms():
 
 
     def title(self, EXTRACTED_DATA, do_id):
-        title = html.unescape(EXTRACTED_DATA['digital_objects'][do_id]['title'])
-        title = self.remove_EAD_tags(title)
+        title = self.remove_EAD_tags(EXTRACTED_DATA['digital_objects'][do_id]['title'])
         return title
 
 
