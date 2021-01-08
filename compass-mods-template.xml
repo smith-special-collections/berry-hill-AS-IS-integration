@@ -225,4 +225,7 @@
 <!-- Preferred Citation -->
 <note type="preferred citation" displayLabel="Preferred Citation">{{title}}, {%- if resource_title != None %} {{resource_title}}, {%- endif %} {%- if repository != None %} {{repository}},{%- endif %} {%- if resource_ms_no != None %} {{resource_ms_no}}, {%- endif %} Smith College Special Collections, Northampton, Massachusetts.</note>
 
+<!-- Version -->
+<recordInfo> <recordOrigin>This record was created using version 1.0 of Smith College Special Collections' Berry Hill ASpace-to-MODS converter.</recordOrigin> </recordInfo>
+
 </mods>
