@@ -112,17 +112,7 @@
 
 <!-- Arrangement -->
 {%- if arrangement != None %}
-{%- for a in arrangement %}
-<abstract type="arrangement">{{a}}
-  {%- if arrangement_items != None %}
-  {%- for item in arrangement_items %}
-  <list type="simple">
-    <item>{{item}}</item>
-  </list>
-  {%- endfor %}
-  {%- endif %}
-</abstract>
-{%- endfor %}
+<note type="arrangement">{{arrangement}}</note>
 {%- endif %}
 
 <!-- Scope and content -->

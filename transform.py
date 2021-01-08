@@ -69,7 +69,7 @@ MAPPING = {
         'required': False,
     },
     'arrangement': {
-        'transform_function': 'arrangement_content',
+        'transform_function': 'format_arrangement',
         'required': False
     },
     'arrangement_items': {
@@ -125,7 +125,8 @@ class Transforms():
 
 
     def title(self, EXTRACTED_DATA, do_id):
-        title = EXTRACTED_DATA['digital_objects'][do_id]['title']
+        title = html.unescape(EXTRACTED_DATA['digital_objects'][do_id]['title'])
+        title = self.remove_EAD_tags(title)
         return title
 
 
@@ -464,9 +465,11 @@ class Transforms():
                         if note['type'] == note_type:
                             if note['publish'] == True:
                                 try:
-                                    notes_lst.append(self.remove_EAD_tags(note['subnotes'][0]['content']))
+                                    cleaned_note = self.remove_EAD_tags(note['subnotes'][0]['content'])
+                                    notes_lst.append(cleaned_note)
                                 except KeyError:
-                                    notes_lst.append(self.remove_EAD_tags(note['content']))
+                                    cleaned_note = self.remove_EAD_tags(note['content'])
+                                    notes_lst.append(cleaned_note)
         
         # Check for subseries
         if len(notes_lst) == 0:
@@ -484,9 +487,11 @@ class Transforms():
                                     else:
                                         context_str = ''
                                     try:
-                                        notes_lst.append(context_str + ' ' + self.remove_EAD_tags(note['subnotes'][0]['content']))
+                                        cleaned_note = self.remove_EAD_tags(note['subnotes'][0]['content'])
+                                        notes_lst.append(context_str + ' ' + cleaned_note)
                                     except KeyError:
-                                        notes_lst.append(context_str + ' ' + self.remove_EAD_tags(note['content']))
+                                        cleaned_note = self.remove_EAD_tags(note['content'])
+                                        notes_lst.append(context_str + ' ' + cleaned_note)
 
         if len(notes_lst) == 0:
             if series != None:
@@ -503,9 +508,11 @@ class Transforms():
                                     else:
                                         context_str = ''
                                     try:
-                                        notes_lst.append(context_str + ' ' + self.remove_EAD_tags(note['subnotes'][0]['content']))
+                                        cleaned_note = self.remove_EAD_tags(note['subnotes'][0]['content'])
+                                        notes_lst.append(context_str + ' ' + cleaned_note)
                                     except KeyError:
-                                        notes_lst.append(context_str + ' ' + self.remove_EAD_tags(note['content']))
+                                        cleaned_note = self.remove_EAD_tags(note['content'])
+                                        notes_lst.append(context_str + ' ' + cleaned_note)
 
         if len(notes_lst) == 0:
             # If there are not any notes at the archival object level or series level, search at the resource level
@@ -523,9 +530,11 @@ class Transforms():
                                     else:
                                         context_str = ''
                                     try:
-                                        notes_lst.append(context_str + ' ' + self.remove_EAD_tags(note['subnotes'][0]['content']))
+                                        cleaned_note = self.remove_EAD_tags(note['subnotes'][0]['content'])
+                                        notes_lst.append(context_str + ' ' + cleaned_note)
                                     except KeyError:
-                                        notes_lst.append(context_str + ' ' + self.remove_EAD_tags(note['content']))
+                                        cleaned_note = self.remove_EAD_tags(note['content'])
+                                        notes_lst.append(context_str + ' ' + cleaned_note)
 
 
         return notes_lst
@@ -600,9 +609,26 @@ class Transforms():
         if arrangement != None:
             if isinstance(arrangement, dict):
                 if len(arrangement['items']) > 0:
-                    return arrangement['items']
+                    items = ', '.join(arrangement['items'])
+                    return items
                 else:
                     return None
+
+
+    def format_arrangement(self, EXTRACTED_DATA, do_id):
+        content = self.arrangement_content(EXTRACTED_DATA, do_id)
+        items = self.arrangement_items(EXTRACTED_DATA, do_id)
+        if content != None and items != None:
+            if content[0][-1] != ':':
+                content_text = content[0] + ': '
+            else:
+                content_text = content[0] + ' '
+            arrangement = content_text + items
+            return arrangement 
+        elif content != None and items == None:
+            return content
+        elif content == None and items == None:
+            return None             
 
 
     def general_notes(self, EXTRACTED_DATA, do_id):
