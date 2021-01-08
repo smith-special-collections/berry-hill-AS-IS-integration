@@ -484,9 +484,9 @@ class Transforms():
                                     else:
                                         context_str = ''
                                     try:
-                                        notes_lst.append(self.remove_EAD_tags(note['subnotes'][0]['content']) + ' ' + context_str)
+                                        notes_lst.append(context_str + ' ' + self.remove_EAD_tags(note['subnotes'][0]['content']))
                                     except KeyError:
-                                        notes_lst.append(self.remove_EAD_tags(note['content']) + ' ' + context_str)
+                                        notes_lst.append(context_str + ' ' + self.remove_EAD_tags(note['content']))
 
         if len(notes_lst) == 0:
             if series != None:
@@ -503,9 +503,9 @@ class Transforms():
                                     else:
                                         context_str = ''
                                     try:
-                                        notes_lst.append(self.remove_EAD_tags(note['subnotes'][0]['content']) + ' ' + context_str)
+                                        notes_lst.append(context_str + ' ' + self.remove_EAD_tags(note['subnotes'][0]['content']))
                                     except KeyError:
-                                        notes_lst.append(self.remove_EAD_tags(note['content']) + ' ' + context_str)
+                                        notes_lst.append(context_str + ' ' + self.remove_EAD_tags(note['content']))
 
         if len(notes_lst) == 0:
             # If there are not any notes at the archival object level or series level, search at the resource level
@@ -523,9 +523,9 @@ class Transforms():
                                     else:
                                         context_str = ''
                                     try:
-                                        notes_lst.append(self.remove_EAD_tags(note['subnotes'][0]['content']) + ' ' + context_str)
+                                        notes_lst.append(context_str + ' ' + self.remove_EAD_tags(note['subnotes'][0]['content']))
                                     except KeyError:
-                                        notes_lst.append(self.remove_EAD_tags(note['content']) + ' ' + context_str)
+                                        notes_lst.append(context_str + ' ' + self.remove_EAD_tags(note['content']))
 
 
         return notes_lst
