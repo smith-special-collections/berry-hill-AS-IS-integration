@@ -69,11 +69,7 @@ MAPPING = {
         'required': False,
     },
     'arrangement': {
-        'transform_function': 'format_arrangement',
-        'required': False
-    },
-    'arrangement_items': {
-        'transform_function': 'arrangement_items',
+        'transform_function': 'arrangement',
         'required': False
     },
     'general_notes': {
@@ -559,7 +555,7 @@ class Transforms():
         return physdesc
 
     
-    def _arrangement(self, EXTRACTED_DATA, do_id):
+    def arrangement(self, EXTRACTED_DATA, do_id):
         '''Helper function that returns arrangement note'''
         arrangement = []
         ao = self._component_object(EXTRACTED_DATA, do_id)
@@ -568,66 +564,25 @@ class Transforms():
                 for note in ao['notes']:
                     if note['type'] == 'arrangement':
                         arrangement.extend(note['subnotes'])
-
-        # Creates a dictionary of components from the arrangement note if there is one that is then passed to self.arrangement_items
-        if len(arrangement) > 0:
-            arrangement_dict = {}
-            arrangement_dict['content'] = []
-            arrangement_dict['items'] = []
-            for a in arrangement:
-                try:
-                    if a['content'] not in arrangement_dict['content']:
-                        arrangement_dict['content'].append(a['content'])
-                except KeyError:
-                    pass
-            try:
-                for item in a['items']:
-                    if item not in arrangement_dict['items']:
-                        arrangement_dict['items'].append(item)
-            except KeyError:
-                pass
-            
-            return arrangement_dict
         
-        else:
+        for a in arrangement:
+            if 'content' in a.keys():
+                content = a['content']
+                if content[-1] != ':':
+                    content = content + ': '
+                else:
+                    content = content + ' '
+                pp(content)
+            if 'items' in a.keys():
+                items = a['items']
+                if isinstance(items, list):
+                    items = ', '.join(items)
+        try:            
+            arrangement = content + items
+            return arrangement
+        except Exception as e:
+            pp(e)
             return None
-
-
-    def arrangement_content(self, EXTRACTED_DATA, do_id):
-        arrangement = self._arrangement(EXTRACTED_DATA, do_id)
-        if arrangement != None:
-            if isinstance(arrangement, dict):
-                if len(arrangement['content']) > 0:
-                    return arrangement['content']
-                else:
-                    return None
-
-
-    def arrangement_items(self, EXTRACTED_DATA, do_id):
-        arrangement = self._arrangement(EXTRACTED_DATA, do_id)
-        if arrangement != None:
-            if isinstance(arrangement, dict):
-                if len(arrangement['items']) > 0:
-                    items = ', '.join(arrangement['items'])
-                    return items
-                else:
-                    return None
-
-
-    def format_arrangement(self, EXTRACTED_DATA, do_id):
-        content = self.arrangement_content(EXTRACTED_DATA, do_id)
-        items = self.arrangement_items(EXTRACTED_DATA, do_id)
-        if content != None and items != None:
-            if content[0][-1] != ':':
-                content_text = content[0] + ': '
-            else:
-                content_text = content[0] + ' '
-            arrangement = content_text + items
-            return arrangement 
-        elif content != None and items == None:
-            return content
-        elif content == None and items == None:
-            return None             
 
 
     def general_notes(self, EXTRACTED_DATA, do_id):
