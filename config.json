@@ -1,0 +1,11 @@
+{"config": {
+"repos" : [2, 3, 4],
+"repositories" : {
+	"2": "Sophia Smith Collection of Women's History",
+	"3": "Mortimer Rare Book Collection",
+	"4": "College Archives"
+	},
+"findingaid_url" : "https://findingaids.smith.edu",
+"relator_file" : "relators.json"
+}
+}
