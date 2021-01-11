@@ -442,16 +442,16 @@ class Transforms():
         notes_lst = []
         ao = self._component_object(EXTRACTED_DATA, do_id)
         if ao != None:
-            ao_title = ao['title']
+            ao_title = self.remove_EAD_tags(ao['title'])
         subseries = self._subseries(EXTRACTED_DATA, do_id)
         if subseries != None:
-            subseries_title = subseries['title']
+            subseries_title = self.remove_EAD_tags(subseries['title'])
         series = self._series(EXTRACTED_DATA, do_id)
         if series != None:
-            series_title = series['title']
+            series_title = self.remove_EAD_tags(series['title'])
         resource = self._resource(EXTRACTED_DATA, do_id)
         if resource != None:
-            resource_title = resource['title']
+            resource_title = self.remove_EAD_tags(resource['title'])
 
         if ao != None:
             if len(ao['notes']) > 0:
@@ -572,7 +572,6 @@ class Transforms():
                     content = content + ': '
                 else:
                     content = content + ' '
-                pp(content)
             if 'items' in a.keys():
                 items = a['items']
                 if isinstance(items, list):
@@ -581,7 +580,6 @@ class Transforms():
             arrangement = content + items
             return arrangement
         except Exception as e:
-            pp(e)
             return None
 
 
@@ -594,7 +592,7 @@ class Transforms():
                     if note['type'] == 'odd':
                         # Odd is the term_type for general notes
                         if note['publish'] == True:
-                            general_notes.append(note['subnotes'][0])
+                            general_notes.append(self.remove_EAD_tags(note['subnotes'][0]))
        
         if len(general_notes) == 0:
             return None

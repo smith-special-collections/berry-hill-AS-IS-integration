@@ -26,8 +26,8 @@
 {%- endif %}
 {%- else %}
 <dateCreated encoding="iso8601">{{date.expression}}</dateCreated>
-</originInfo>
 {%- endif %}
+</originInfo>
 {%- endif %}
 {%- endfor %}
 {%- endif %}
