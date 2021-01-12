@@ -190,9 +190,9 @@ class Transforms():
                             try:
                                 series = EXTRACTED_DATA['series'][subseries['parent']['ref']]
                                 return series
-                            except KeyError:
+                            except AttributeError:
                                 return None
-                    except KeyError:
+                    except AttributeError:
                         return None
 
 
@@ -440,19 +440,33 @@ class Transforms():
         '''Logic based on rules of inheritance: 
         https://github.com/smith-special-collections/sc-documentation/wiki/Rules-for-description-inheritance-for-digital-object-records'''
         notes_lst = []
+        context_str = ''
         ao = self._component_object(EXTRACTED_DATA, do_id)
         if ao != None:
             ao_title = self.remove_EAD_tags(ao['title'])
+        else:    
+            ao_title = ''
         subseries = self._subseries(EXTRACTED_DATA, do_id)
         if subseries != None:
             subseries_title = self.remove_EAD_tags(subseries['title'])
+        else:
+            subseries_title = ''
         series = self._series(EXTRACTED_DATA, do_id)
         if series != None:
             series_title = self.remove_EAD_tags(series['title'])
+        else:
+            series_title = ''
         resource = self._resource(EXTRACTED_DATA, do_id)
         if resource != None:
             resource_title = self.remove_EAD_tags(resource['title'])
-
+        else:
+            resource_title = ''
+        
+        # pp(resource_title) 
+        # pp(series_title)
+        # pp(subseries_title)
+        # pp(ao_title)
+        
         if ao != None:
             if len(ao['notes']) > 0:
                 for note in ao['notes']:
@@ -477,16 +491,22 @@ class Transforms():
                                     if note_type == 'scopecontent':
                                         try:
                                             context_str = f'This material can be found in the {resource_title}, {series_title}, {subseries_title}, {ao_title}.'
-                                        except:
+                                        except Exception as e:
+                                            pp(e)
                                             context_str = ''
-                                    else:
-                                        context_str = ''
+                                    pp(context_str)
                                     try:
                                         cleaned_note = self.remove_EAD_tags(note['subnotes'][0]['content'])
-                                        notes_lst.append(context_str + ' ' + cleaned_note)
+                                        if context_str == '':
+                                            notes_lst.append(cleaned_note)
+                                        else:
+                                            notes_lst.append(context_str + ' ' + cleaned_note)
                                     except KeyError:
                                         cleaned_note = self.remove_EAD_tags(note['content'])
-                                        notes_lst.append(context_str + ' ' + cleaned_note)
+                                        if context_str == '':
+                                            notes_lst.append(cleaned_note)
+                                        else:
+                                            notes_lst.append(context_str + ' ' + cleaned_note)
 
         if len(notes_lst) == 0:
             if series != None:
@@ -498,16 +518,22 @@ class Transforms():
                                     if note_type == 'scopecontent':
                                         try:
                                             context_str = f'This material can be found in the {resource_title}, {series_title}, {ao_title}.'
-                                        except:
+                                        except Exception as e:
+                                            pp(e)
                                             context_str = ''
-                                    else:
-                                        context_str = ''
+                                    pp(context_str)
                                     try:
                                         cleaned_note = self.remove_EAD_tags(note['subnotes'][0]['content'])
-                                        notes_lst.append(context_str + ' ' + cleaned_note)
+                                        if context_str == '':
+                                            notes_lst.append(cleaned_note)
+                                        else:
+                                            notes_lst.append(context_str + ' ' + cleaned_note)
                                     except KeyError:
                                         cleaned_note = self.remove_EAD_tags(note['content'])
-                                        notes_lst.append(context_str + ' ' + cleaned_note)
+                                        if context_str == '':
+                                            notes_lst.append(cleaned_note)
+                                        else:
+                                            notes_lst.append(context_str + ' ' + cleaned_note)
 
         if len(notes_lst) == 0:
             # If there are not any notes at the archival object level or series level, search at the resource level
@@ -520,16 +546,22 @@ class Transforms():
                                     if note_type == 'scopecontent':
                                         try:
                                             context_str = f'This material can be found in the {resource_title}, {ao_title}.'
-                                        except:
+                                        except Exception as e:
+                                            pp(e)
                                             context_str = ''
-                                    else:
-                                        context_str = ''
+                                    pp(context_str)
                                     try:
                                         cleaned_note = self.remove_EAD_tags(note['subnotes'][0]['content'])
-                                        notes_lst.append(context_str + ' ' + cleaned_note)
+                                        if context_str == '':
+                                            notes_lst.append(cleaned_note)
+                                        else:
+                                            notes_lst.append(context_str + ' ' + cleaned_note)
                                     except KeyError:
                                         cleaned_note = self.remove_EAD_tags(note['content'])
-                                        notes_lst.append(context_str + ' ' + cleaned_note)
+                                        if context_str == '':
+                                            notes_lst.append(cleaned_note)
+                                        else:
+                                            notes_lst.append(context_str + ' ' + cleaned_note)
 
 
         return notes_lst
