@@ -15,3 +15,8 @@ This code calls get_extract.py, creates the cache, creates an instance of the Tr
 
 ## compass-mods-template.xml
 Jinja template to create custom MODS XML file.
+
+# Run
+python3 export.py
+
+Update config.json to change which and how many repositories to pull from.
