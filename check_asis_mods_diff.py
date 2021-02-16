@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.INFO)
 
 argparser = argparse.ArgumentParser(description=description)
 argparser.add_argument('inputdir', help="A directory full of CRUD name format files ready to be ingested.")
-argparser.add_argument('islandora', help="e.g. compass-stage.fivecolleges.edu")
+argparser.add_argument('islandora', help="e.g. compass-stage.fivecolleges.edu or compass.fivecolleges.edu")
 argparser.add_argument('--cookie-file', help="cookies.txt format cookie file saved from active session. Needed if the objects have restricted access.")
 cliargs = argparser.parse_args()
 
